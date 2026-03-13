@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+{% block title %}Owner Dashboard — LocalEves{% endblock %}
+
+{% block content %}
+
+    {% if is_guest %}
+    <div class="max-w-md mx-auto text-center">
+        <div class="bg-amber-50 border border-amber-200 rounded-2xl p-8">
+            <div class="text-4xl mb-3">⏳</div>
+            <h2 class="text-xl font-bold text-amber-800 mb-2">
+                Verification Pending
+            </h2>
+            <p class="text-amber-700 text-sm mb-4">
+                Your establishment is registered but not yet verified.
+                Enter the OTP sent to your email to complete verification.
+            </p>
+            <a href="{% url 'establishments:verify_otp' %}"
+               class="inline-block bg-amber-600 text-white px-6 py-2.5
+                      rounded-lg font-medium text-sm hover:bg-amber-700
+                      transition-colors duration-200">
+                Enter OTP
+            </a>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- Verified owner dashboard -->
+    <div class="mb-8">
+        <h1 class="text-2xl font-bold text-gray-900">
+            Welcome, {{ request.user.get_short_name }}
+        </h1>
+        <p class="text-gray-500 text-sm mt-1">
+            Manage your establishments and events from here.
+        </p>
+    </div>
+
+    {% if establishments %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for establishment in establishments %}
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+
+                    <!-- Photo -->
+                    {% if establishment.photo %}
+                        <img src="{{ establishment.photo.url }}"
+                             alt="{{ establishment.name }}"
+                             class="w-full h-40 object-cover">
+                       
+                    {% else %}
+                        <div class="w-full h-40 bg-indigo-50 flex
+                                    items-center justify-center">
+                            <span class="text-4xl">🏪</span>
+                        </div>
+                    {% endif %}
+
+                    <div class="p-4">
+                        <div class="flex items-start justify-between mb-2">
+                            <h3 class="font-semibold text-gray-900">
+                                {{ establishment.name }}
+                            </h3>
+                            {% if establishment.is_verified %}
+                                <span class="text-xs bg-green-100 text-green-700
+                                             px-2 py-0.5 rounded-full font-medium">
+                                    ✓ Verified
+                                </span>
+                            {% endif %}
+                        </div>
+
+                        <p class="text-xs text-gray-500 mb-1">
+                            {{ establishment.get_category_display }}
+                            · {{ establishment.city }}
+                        </p>
+                      
+
+                        {% if establishment.description %}
+                            <p class="text-xs text-gray-400 mt-2 line-clamp-2">
+                                {{ establishment.description }}
+                            </p>
+                            
+                        {% endif %}
+
+                        <div class="mt-4 pt-3 border-t border-gray-100
+                                    flex gap-2">
+                            <a href="#"
+                               class="text-xs text-indigo-600 hover:underline font-medium">
+                                Edit Details
+                            </a>
+                          
+                            <span class="text-gray-300">·</span>
+                            <a href="#"
+                               class="text-xs text-indigo-600 hover:underline font-medium">
+                                Create Event
+                            </a>
+                           
+                        </div>
+                    </div>
+
+                </div>
+            {% endfor %}
+        </div>
+
+    {% else %}
+        <div class="text-center py-16">
+            <div class="text-5xl mb-4">🏪</div>
+            <h2 class="text-xl font-bold text-gray-900 mb-2">
+                No establishments yet
+            </h2>
+            <p class="text-gray-500 text-sm mb-6">
+                Register your first establishment to get started.
+            </p>
+            <a href="{% url 'establishments:register' %}"
+               class="inline-block bg-indigo-600 text-white px-6 py-2.5
+                      rounded-lg font-medium text-sm hover:bg-indigo-700
+                      transition-colors duration-200">
+                Register Establishment
+            </a>
+        </div>
+    {% endif %}
+
+    {% endif %}
+
+{% endblock %}

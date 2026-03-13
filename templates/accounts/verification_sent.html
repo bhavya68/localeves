@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block title %}Check Your Email — LocalEves{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto text-center">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+
+        <div class="text-5xl mb-4">📬</div>
+
+        <h1 class="text-2xl font-bold text-gray-900 mb-3">
+            Check your email
+        </h1>
+        <p class="text-gray-500 text-sm leading-relaxed mb-4">
+            We've sent a verification link to your email address.
+            Click the link to activate your LocalEves account.
+        </p>
+        <p class="text-gray-400 text-xs">
+            Didn't receive it? Check your spam folder.
+        </p>
+
+        <!-- Development helper — remove before production -->
+        <div class="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg text-left">
+            <p class="text-amber-700 text-xs font-medium mb-1">
+                🛠 Development note
+            </p>
+            <p class="text-amber-600 text-xs">
+                The verification email is printed to your Django
+                terminal (Tab 1). Copy the link from there to verify.
+            </p>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

@@ -1,15 +1,108 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    {% load static %}
+    <title>{% block title %}LocalEves{% endblock %}</title>
+    
 <link href="{% static 'css/output.css' %}" rel="stylesheet">
+{% block extra_head %}
+ <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+ {% endblock %}
 </head>
-<body>
-    <h1
-    class="text-amber-300">
-hello</h1>
+<body class="bg-gray-50 min-h-screen">
+   <nav class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16">
+            <a href="{% url 'home' %}"
+                   class="text-xl font-bold text-indigo-600 tracking-tight">
+                    LocalEves
+                </a>
+            <div class="flex items-center gap-6">
+                <a href="{% url 'home' %}"
+                       class="text-gray-600 hover:text-indigo-600
+                              text-sm font-medium transition-colors duration-200">
+                        Home
+                </a>
+                {% if user.is_authenticated %}
+                        <a href="/map/"
+                           class="text-gray-600 hover:text-indigo-600
+                                  text-sm font-medium transition-colors duration-200">
+                            Map
+                        </a>
+
+                        {% if user.user_type == 'owner' or user.user_type == 'guest_owner' %}
+                            <a href="{% url 'establishments:dashboard' %}"
+                            class="text-gray-600 hover:text-indigo-600
+                                    text-sm font-medium transition-colors duration-200">
+                                Dashboard
+                            </a>
+                         {% else %}
+                        <a href="{% url 'establishments:register' %}"
+                        class="text-gray-600 hover:text-indigo-600
+                                text-sm font-medium transition-colors duration-200">
+                            Register Establishment
+                        </a>
+                        {% endif %}
+                        <form method="POST" action="{% url 'account_logout' %}" class="inline">
+                        {% csrf_token %}
+                          <button type="submit"
+                                    class="text-gray-600 hover:text-indigo-600
+                                           text-sm font-medium cursor-pointer
+                                           bg-transparent border-none
+                                           transition-colors duration-200">
+                                Logout
+
+                            </button>
+                        </form>
+                {% else %}
+                <a href="{% url 'account_login' %}"
+                           class="text-gray-600 hover:text-indigo-600
+                                  text-sm font-medium transition-colors duration-200">
+                            Login
+                        </a>
+
+                        <a href="{% url 'account_signup' %}"
+                           class="bg-indigo-600 text-white px-4 py-2
+                                  rounded-lg text-sm font-medium
+                                  hover:bg-indigo-700
+                                  transition-colors duration-200">
+                            Register
+                        </a>
+
+                {% endif %}
+                        
+            </div>
+        </div>
+    </div>
+   </nav>
+
+    {% if messages %}
+        <div class="max-w-7xl mx-auto px-4 mt-4 space-y-2">
+                {% for message in messages %}
+                    <div class="p-4 rounded-lg text-sm font-medium flex
+                                items-start gap-3
+                        {% if 'error' in message.tags %}
+                            bg-red-50 text-red-800 border border-red-200
+                        {% elif 'success' in message.tags %}
+                            bg-green-50 text-green-800 border border-green-200
+                        {% elif 'warning' in message.tags %}
+                            bg-yellow-50 text-yellow-800 border border-yellow-200
+                        {% else %}
+                            bg-blue-50 text-blue-800 border border-blue-200
+                        {% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+    {% endif %}
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        {% block content %}{% endblock %}
+      
+    </main>
+    {% block extra_scripts %}
+     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+     {% endblock %}
 </body>
 </html>
