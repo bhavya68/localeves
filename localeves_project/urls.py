@@ -26,4 +26,6 @@ urlpatterns = [
     path('accounts/', include('allauth.urls')),
     path('', account_views.home, name='home'),
     path('establishments/', include('establishments.urls')),
+    path('map/', include('map.urls')),
+    path('chat/', include('chat.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -23,6 +23,7 @@ ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 # --- Installed Apps ---
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -40,6 +41,8 @@ INSTALLED_APPS = [
     # Local
     'accounts',
     'establishments',
+    'map',
+    'chat',
 ]
 
 LOGIN_URL = 'account_login'
@@ -94,6 +97,22 @@ DATABASES = {
     }
 }
 
+# --- ASGI Application ---
+ASGI_APPLICATION = 'localeves_project.asgi.application'
+
+
+# --- Channel Layers ---
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': [('127.0.0.1', 6379)],
+           
+        },
+    },
+}
+
+
 # --- Authentication ---
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
@@ -105,7 +124,7 @@ ACCOUNT_LOGIN_METHODS = {'email', 'username'}
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']
 ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
 ACCOUNT_UNIQUE_EMAIL = True
-LOGIN_REDIRECT_URL = '/'
+LOGIN_REDIRECT_URL = '/map/'
 LOGOUT_REDIRECT_URL = '/'
 # Note: No ACCOUNT_LOGOUT_ON_GET here — we keep the default
 # secure behaviour which requires POST for logout

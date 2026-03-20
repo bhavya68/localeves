@@ -97,10 +97,12 @@
                 {% endfor %}
             </div>
     {% endif %}
+    {% block main %}
     <main class="max-w-7xl mx-auto px-4 py-8">
         {% block content %}{% endblock %}
       
     </main>
+    {% endblock %}
     {% block extra_scripts %}
      <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
      {% endblock %}
