@@ -9,18 +9,12 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
+
 @login_required
 def owner_register(request):
 
-   
-    if request.user.user_type == 'owner':
-        messages.info(request, 'You are already a verified owner.')
-        return redirect('establishments:dashboard')
-
-
     if request.method == 'POST':
 
-        # Extract form data from POST
         name = request.POST.get('name', '').strip()
         category = request.POST.get('category', 'other')
         description = request.POST.get('description', '').strip()
@@ -31,7 +25,6 @@ def owner_register(request):
         latitude = request.POST.get('latitude', '').strip()
         longitude = request.POST.get('longitude', '').strip()
         photo = request.FILES.get('photo')
-      
 
         errors = []
 
@@ -40,17 +33,15 @@ def owner_register(request):
 
         if not latitude or not longitude:
             errors.append('Please select your establishment location on the map.')
-      
 
         if errors:
-           
             return render(request, 'establishments/register.html', {
                 'errors': errors,
                 'form_data': request.POST,
                 'categories': Establishment.CATEGORY_CHOICES,
             })
 
-        # ---- Create Establishment ----
+        # Create the establishment
         establishment = Establishment.objects.create(
             owner=request.user,
             name=name,
@@ -64,36 +55,40 @@ def owner_register(request):
             longitude=longitude,
             photo=photo,
             is_verified=False,
-            # Not verified yet — OTP step comes next
         )
-        
 
-        # ---- Update User Type ----
-        request.user.user_type = 'guest_owner'
-        request.user.save()
-      
+        # Verified owners skip the OTP flow — their identity is already confirmed.
+        # We auto-verify the new establishment and keep them as 'owner'.
+        if request.user.user_type == 'owner':
+            establishment.is_verified = True
+            establishment.save(update_fields=['is_verified'])
+            messages.success(
+                request,
+                f'"{name}" has been added and is now live on the map!'
+            )
+            return redirect('establishments:dashboard')
+
+        # First-time registrants: go through OTP verification
+        if request.user.user_type == 'normal':
+            request.user.user_type = 'guest_owner'
+            request.user.save(update_fields=['user_type'])
+
         otp_code = str(random.randint(100000, 999999))
-       
 
         # Invalidate any existing unused OTPs for this user
         OwnerOTP.objects.filter(
             user=request.user,
-            is_used=False
+            is_used=False,
         ).update(is_used=True)
-       
 
-        # Create new OTP record
         OwnerOTP.objects.create(
             user=request.user,
             establishment=establishment,
             otp_code=otp_code,
             expires_at=timezone.now() + timedelta(minutes=30),
-           
         )
 
-        # ---- Send OTP Email ----
         from django.core.mail import send_mail
-     
 
         send_mail(
             subject='LocalEves — Your Owner Verification OTP',
@@ -119,27 +114,22 @@ If you did not register on LocalEves, please ignore this email.
 
         messages.success(
             request,
-            f'Establishment registered! Check your email for the OTP.'
+            'Establishment registered! Check your email for the OTP.'
         )
-
         return redirect('establishments:verify_otp')
 
-    # GET request — show the empty form
+    # GET request — show the form
     return render(request, 'establishments/register.html', {
         'categories': Establishment.CATEGORY_CHOICES,
-    
     })
 
 
 @login_required
 def verify_otp(request):
-   
 
-    # Already verified — no need to be here
     if request.user.user_type == 'owner':
         return redirect('establishments:dashboard')
 
-    # Not even a guest owner — redirect to registration
     if request.user.user_type == 'normal':
         messages.warning(request, 'Please register your establishment first.')
         return redirect('establishments:register')
@@ -151,67 +141,52 @@ def verify_otp(request):
             messages.error(request, 'Please enter the OTP.')
             return render(request, 'establishments/verify_otp.html')
 
-        # Find the most recent unused OTP for this user
         try:
             otp = OwnerOTP.objects.filter(
                 user=request.user,
                 is_used=False,
             ).latest('created_at')
-     
         except OwnerOTP.DoesNotExist:
             messages.error(request, 'No active OTP found. Please register again.')
             return redirect('establishments:register')
 
-        # Check validity using our model method
         if not otp.is_valid():
             messages.error(request, 'This OTP has expired. Please request a new one.')
             return render(request, 'establishments/verify_otp.html')
 
-        # Check if entered code matches stored code
         if otp.otp_code != entered_otp:
             messages.error(request, 'Incorrect OTP. Please try again.')
             return render(request, 'establishments/verify_otp.html')
 
-        # ---- OTP is valid — complete verification ----
-
-        # Mark OTP as used so it can't be reused
         otp.is_used = True
         otp.save(update_fields=['is_used'])
 
-        # Mark establishment as verified
         if otp.establishment:
             otp.establishment.is_verified = True
             otp.establishment.save(update_fields=['is_verified'])
 
-        # Upgrade user to verified owner
         request.user.user_type = 'owner'
         request.user.save(update_fields=['user_type'])
 
         messages.success(
             request,
-            f'Congratulations! Your establishment is now verified on LocalEves.'
+            'Congratulations! Your establishment is now verified on LocalEves.'
         )
         return redirect('establishments:dashboard')
 
-    # GET request — show the OTP entry form
     return render(request, 'establishments/verify_otp.html')
 
 
 @login_required
 def owner_dashboard(request):
-  
+
     if request.user.user_type == 'normal':
         messages.info(request, 'Register your establishment to access the dashboard.')
         return redirect('establishments:register')
 
-   
     establishments = Establishment.objects.filter(owner=request.user)
-  
 
     return render(request, 'establishments/dashboard.html', {
         'establishments': establishments,
         'is_guest': request.user.user_type == 'guest_owner',
-        # Tell the template if user is still pending verification
     })
-
-
