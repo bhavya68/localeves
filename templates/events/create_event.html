@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+{% block title %}Create Event — {{ establishment.name }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+
+    .events-page { font-family: 'DM Sans', sans-serif; background: #0a0a0f; min-height: 100vh; }
+    .hero-title {
+        font-family: 'Syne', sans-serif; font-weight: 800;
+        font-size: clamp(2rem, 5vw, 3.5rem);
+        background: linear-gradient(135deg, #fff 0%, #a78bfa 50%, #6d28d9 100%);
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        background-clip: text; line-height: 1.1;
+    }
+    .glass-card {
+        background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 24px; backdrop-filter: blur(20px);
+    }
+    .field-group { margin-bottom: 1.5rem; }
+    .field-label {
+        display: block; font-size: 0.75rem; font-weight: 500;
+        letter-spacing: 0.08em; text-transform: uppercase;
+        color: rgba(255,255,255,0.4); margin-bottom: 0.5rem;
+    }
+    .field-input {
+        width: 100%; background: rgba(255,255,255,0.06);
+        border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;
+        padding: 0.875rem 1rem; color: #fff;
+        font-family: 'DM Sans', sans-serif; font-size: 0.9rem;
+        transition: all 0.2s ease; outline: none;
+    }
+    .field-input:focus {
+        border-color: rgba(139,92,246,0.6); background: rgba(139,92,246,0.08);
+        box-shadow: 0 0 0 3px rgba(139,92,246,0.12);
+    }
+    .field-input::placeholder { color: rgba(255,255,255,0.2); }
+    textarea.field-input { resize: none; }
+    .submit-btn {
+        width: 100%; padding: 1rem;
+        background: linear-gradient(135deg, #7c3aed, #4f46e5);
+        border: none; border-radius: 14px; color: #fff;
+        font-family: 'Syne', sans-serif; font-size: 1rem;
+        font-weight: 700; cursor: pointer; transition: all 0.2s ease;
+    }
+    .submit-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 30px rgba(124,58,237,0.4); }
+    .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .orb { position: absolute; border-radius: 50%; filter: blur(80px); pointer-events: none; opacity: 0.15; }
+    main { padding: 0 !important; max-width: 100% !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="events-page relative">
+
+    <div class="orb" style="width:500px;height:500px;background:#7c3aed;top:-100px;right:-100px;"></div>
+    <div class="orb" style="width:400px;height:400px;background:#4f46e5;bottom:-50px;left:-100px;"></div>
+
+    <div style="max-width:680px; margin:0 auto; padding:3rem 1.5rem;">
+
+        <div style="margin-bottom:2.5rem;">
+            <a href="{% url 'establishments:dashboard' %}"
+               style="color:rgba(255,255,255,0.4); font-size:0.85rem; text-decoration:none;
+                      display:inline-flex; align-items:center; gap:0.4rem; margin-bottom:2rem;">
+                ← Back to Dashboard
+            </a>
+            <p style="color:rgba(255,255,255,0.4); font-size:0.85rem; margin-bottom:0.5rem;
+                      letter-spacing:0.05em; text-transform:uppercase;">
+                {{ establishment.name }}
+            </p>
+            <h1 class="hero-title">Create an Event</h1>
+            <p style="color:rgba(255,255,255,0.4); margin-top:0.75rem; font-size:0.95rem; line-height:1.6;">
+                Your event appears as a glowing pin on the map and gets its own live chat room.
+            </p>
+        </div>
+
+        <div style="margin-bottom:2rem;">
+            <span style="display:inline-flex; align-items:center; gap:0.5rem;
+                         background:linear-gradient(135deg,rgba(139,92,246,0.2),rgba(109,40,217,0.2));
+                         border:1px solid rgba(139,92,246,0.3); border-radius:100px;
+                         padding:0.5rem 1.25rem; color:#c4b5fd; font-size:0.875rem; font-weight:500;">
+                ✦ ₹{{ price }} to publish
+            </span>
+        </div>
+
+        {% if errors %}
+        <div style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.2);
+                    border-radius:12px; padding:1rem; margin-bottom:1.5rem;">
+            {% for error in errors %}
+            <p style="color:#fca5a5; font-size:0.875rem; margin:0;">⚠ {{ error }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="glass-card" style="padding:2rem;">
+            <form id="event-form" method="POST" action="">
+                {% csrf_token %}
+
+                <div class="field-group">
+                    <label class="field-label">Event Name *</label>
+                    <input type="text" name="name" class="field-input"
+                           placeholder="e.g. Grand Diwali Sale" required>
+                </div>
+
+                <div class="field-group">
+                    <label class="field-label">Description</label>
+                    <textarea name="description" class="field-input" rows="3"
+                              placeholder="Tell people what's happening..."></textarea>
+                </div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+                    <div class="field-group">
+                        <label class="field-label">Start Date & Time *</label>
+                        <input type="datetime-local" name="start_datetime"
+                               class="field-input" required style="color-scheme:dark;">
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label">End Date & Time *</label>
+                        <input type="datetime-local" name="end_datetime"
+                               class="field-input" required style="color-scheme:dark;">
+                    </div>
+                </div>
+
+                <div style="background:rgba(139,92,246,0.08); border:1px solid rgba(139,92,246,0.15);
+                            border-radius:12px; padding:1rem; margin-bottom:1.5rem;">
+                    <p style="color:rgba(255,255,255,0.5); font-size:0.8rem; margin:0; line-height:1.6;">
+                        🔒 A live group chat room will be created automatically for your event.
+                        Real Razorpay payment will be enabled in Stage 6.
+                    </p>
+                </div>
+
+                <button type="submit" class="submit-btn" id="pay-btn">
+                    Create Event (Mock Payment)
+                </button>
+
+            </form>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.getElementById('event-form').addEventListener('submit', function() {
+    const btn = document.getElementById('pay-btn');
+    btn.disabled = true;
+    btn.textContent = 'Creating event...';
+});
+</script>
+{% endblock %}

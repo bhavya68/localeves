@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'establishments',
     'map',
     'chat',
+    'events',
 ]
 
 LOGIN_URL = 'account_login'
@@ -96,6 +97,10 @@ DATABASES = {
         'PORT': config('DB_PORT'),
     }
 }
+
+RAZORPAY_KEY_ID = config('RAZORPAY_KEY_ID')
+RAZORPAY_KEY_SECRET = config('RAZORPAY_KEY_SECRET')
+EVENT_PRICE_PAISE = config('EVENT_PRICE_PAISE', cast=int, default=9900)
 
 # --- ASGI Application ---
 ASGI_APPLICATION = 'localeves_project.asgi.application'

@@ -28,4 +28,5 @@ urlpatterns = [
     path('establishments/', include('establishments.urls')),
     path('map/', include('map.urls')),
     path('chat/', include('chat.urls')),
+    path('events/', include('events.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

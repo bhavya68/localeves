@@ -1,7 +1,7 @@
+{# File: templates/map/establishment_detail.html #}
 
 <div class="space-y-4">
 
-    
     {% if establishment.photo %}
         <img src="{{ establishment.photo.url }}"
              alt="{{ establishment.name }}"
@@ -31,17 +31,14 @@
         {{ establishment.city }}
     </p>
 
-
     {% if establishment.description %}
         <p class="text-sm text-gray-600 leading-relaxed">
             {{ establishment.description }}
         </p>
     {% endif %}
 
-    {# --- Contact details --- #}
     {% if establishment.contact_phone or establishment.contact_email %}
         <div class="border-t border-gray-100 pt-3 space-y-1.5">
-
             {% if establishment.contact_phone %}
                 <p class="text-xs text-gray-500 flex items-center gap-2">
                     <span>📞</span>
@@ -51,7 +48,6 @@
                     </a>
                 </p>
             {% endif %}
-
             {% if establishment.contact_email %}
                 <p class="text-xs text-gray-500 flex items-center gap-2">
                     <span>✉️</span>
@@ -61,7 +57,6 @@
                     </a>
                 </p>
             {% endif %}
-
         </div>
     {% endif %}
 
@@ -72,25 +67,50 @@
         </p>
     {% endif %}
 
-    {% if establishment.chat_rooms.exists %}
-    {% with room=establishment.chat_rooms.filter|first %}
-    {% endwith %}
-{% endif %}
+    {# --- Live Event Badge --- #}
+    {% for event in establishment.events.all %}
+        {% if event.is_live %}
+            <div class="border-t border-gray-100 pt-3">
+                <div style="background:linear-gradient(135deg,rgba(124,58,237,0.1),rgba(79,70,229,0.1));
+                            border:1px solid rgba(124,58,237,0.25);
+                            border-radius:12px; padding:0.875rem;">
+                    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.35rem;">
+                        <span style="width:7px;height:7px;background:#7c3aed;border-radius:50%;
+                                     display:inline-block; animation:glow-pulse 1.8s ease-in-out infinite;"></span>
+                        <span style="font-size:0.65rem; font-weight:700; color:#7c3aed;
+                                     text-transform:uppercase; letter-spacing:0.08em;">
+                            Live Event
+                        </span>
+                    </div>
+                    <p style="font-size:0.875rem; font-weight:600; color:#1f2937; margin:0 0 0.2rem;">
+                        {{ event.name }}
+                    </p>
+                    {% if event.description %}
+                        <p style="font-size:0.75rem; color:#6b7280; margin:0;">
+                            {{ event.description|truncatechars:80 }}
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+    {% endfor %}
 
-{% for room in establishment.chat_rooms.all %}
-    {% if room.is_active %}
-        <div class="mt-4 pt-3 border-t border-gray-100">
-            <a href="/chat/{{ room.room_name }}/"
-               class="block w-full text-center bg-indigo-600
-                      text-white px-4 py-2.5 rounded-xl
-                      text-sm font-medium hover:bg-indigo-700
-                      transition-colors duration-200">
-                💬 Join Chat
-            </a>
-            <p class="text-xs text-gray-400 text-center mt-1.5">
-                Live group chat for this establishment
-            </p>
-        </div>
-    {% endif %}
-{% endfor %}
+    {# --- Chat Rooms --- #}
+    {% for room in establishment.chat_rooms.all %}
+        {% if room.is_active %}
+            <div class="{% if not establishment.contact_phone and not establishment.contact_email %}border-t border-gray-100 pt-3{% endif %} mt-2">
+                <a href="/chat/{{ room.room_name }}/"
+                   class="block w-full text-center bg-indigo-600
+                          text-white px-4 py-2.5 rounded-xl
+                          text-sm font-medium hover:bg-indigo-700
+                          transition-colors duration-200">
+                    💬 Join Chat
+                </a>
+                <p class="text-xs text-gray-400 text-center mt-1.5">
+                    Live group chat for this establishment
+                </p>
+            </div>
+        {% endif %}
+    {% endfor %}
+
 </div>
