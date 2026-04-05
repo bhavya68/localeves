@@ -67,7 +67,7 @@
         </p>
     {% endif %}
 
-    {# --- Live Event Badge --- #}
+    {# --- Live Event Badge + Chat button (only shown when event is actually live) --- #}
     {% for event in establishment.events.all %}
         {% if event.is_live %}
             <div class="border-t border-gray-100 pt-3">
@@ -86,29 +86,57 @@
                         {{ event.name }}
                     </p>
                     {% if event.description %}
-                        <p style="font-size:0.75rem; color:#6b7280; margin:0;">
+                        <p style="font-size:0.75rem; color:#6b7280; margin:0 0 0.75rem;">
                             {{ event.description|truncatechars:80 }}
                         </p>
                     {% endif %}
+                    <a href="/events/{{ event.id }}/"
+                       style="font-size:0.75rem; color:#7c3aed; text-decoration:none;
+                              font-weight:600;">
+                        View event details →
+                    </a>
                 </div>
+
+                {# Chat button — only if this event has an active chat room #}
+                {% if event.chat_room and event.chat_room.is_active %}
+                <div class="mt-2">
+                    <a href="/chat/{{ event.chat_room.room_name }}/"
+                       class="block w-full text-center bg-indigo-600
+                              text-white px-4 py-2.5 rounded-xl
+                              text-sm font-medium hover:bg-indigo-700
+                              transition-colors duration-200">
+                        💬 Join Live Chat
+                    </a>
+                    <p class="text-xs text-gray-400 text-center mt-1.5">
+                        Live group chat for this event
+                    </p>
+                </div>
+                {% endif %}
             </div>
         {% endif %}
     {% endfor %}
 
-    {# --- Chat Rooms --- #}
-    {% for room in establishment.chat_rooms.all %}
-        {% if room.is_active %}
-            <div class="{% if not establishment.contact_phone and not establishment.contact_email %}border-t border-gray-100 pt-3{% endif %} mt-2">
-                <a href="/chat/{{ room.room_name }}/"
-                   class="block w-full text-center bg-indigo-600
-                          text-white px-4 py-2.5 rounded-xl
-                          text-sm font-medium hover:bg-indigo-700
-                          transition-colors duration-200">
-                    💬 Join Chat
-                </a>
-                <p class="text-xs text-gray-400 text-center mt-1.5">
-                    Live group chat for this establishment
-                </p>
+    {# Upcoming events (not live yet) #}
+    {% for event in establishment.events.all %}
+        {% if event.is_payment_verified and event.is_active and not event.is_live %}
+            <div class="border-t border-gray-100 pt-3">
+                <div style="background:rgba(99,102,241,0.06); border:1px solid rgba(99,102,241,0.15);
+                            border-radius:12px; padding:0.875rem;">
+                    <p style="font-size:0.65rem; font-weight:700; color:#6366f1;
+                              text-transform:uppercase; letter-spacing:0.08em; margin-bottom:0.35rem;">
+                        Upcoming Event
+                    </p>
+                    <p style="font-size:0.875rem; font-weight:600; color:#1f2937; margin:0 0 0.2rem;">
+                        {{ event.name }}
+                    </p>
+                    <p style="font-size:0.75rem; color:#6b7280; margin:0 0 0.5rem;">
+                        {{ event.start_datetime|date:"d M, g:i A" }}
+                    </p>
+                    <a href="/events/{{ event.id }}/"
+                       style="font-size:0.75rem; color:#6366f1; text-decoration:none; font-weight:600;">
+                        View details →
+                    </a>
+                </div>
             </div>
         {% endif %}
     {% endfor %}

@@ -37,6 +37,18 @@ def _activate_event(event, payment_id='mock'):
     event.save(update_fields=['chat_room'])
 
 
+def event_detail(request, event_id):
+    """Public event detail page — no login required."""
+    event = get_object_or_404(
+        Event,
+        id=event_id,
+        is_payment_verified=True,
+    )
+    return render(request, 'events/event_detail.html', {
+        'event': event,
+    })
+
+
 @login_required
 def create_event(request, establishment_slug):
     establishment = get_object_or_404(
@@ -66,7 +78,6 @@ def create_event(request, establishment_slug):
             })
 
         if settings.DEBUG:
-            # In dev, skip Razorpay order creation — use a placeholder
             razorpay_order_id = 'dev_mock_order'
         else:
             client = _razorpay_client()
@@ -117,10 +128,6 @@ def review_event(request, event_id):
 
 @login_required
 def mock_payment_success(request, event_id):
-    """
-    Dev-only endpoint. Simulates a successful payment without hitting Razorpay.
-    Raises 404 in production so it can never be abused.
-    """
     if not settings.DEBUG:
         raise Http404
 
@@ -141,7 +148,6 @@ def mock_payment_success(request, event_id):
 
 @login_required
 def cancel_event(request, event_id):
-    """Delete a pending (unpaid) event."""
     event = get_object_or_404(
         Event,
         id=event_id,
@@ -155,10 +161,6 @@ def cancel_event(request, event_id):
 
 @csrf_exempt
 def payment_success(request):
-    """
-    Production only. Razorpay POSTs here after real payment.
-    Verifies the HMAC signature before trusting anything.
-    """
     if request.method != 'POST':
         return HttpResponseBadRequest('POST required')
 

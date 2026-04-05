@@ -1,0 +1,244 @@
+{% extends 'base.html' %}
+{% block title %}{{ event.name }} — LocalEves{% endblock %}
+
+{% block extra_head %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+
+    .events-page { font-family: 'DM Sans', sans-serif; background: #0a0a0f; min-height: 100vh; }
+    .hero-title {
+        font-family: 'Syne', sans-serif; font-weight: 800;
+        font-size: clamp(1.75rem, 4vw, 3rem);
+        background: linear-gradient(135deg, #fff 0%, #a78bfa 50%, #6d28d9 100%);
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        background-clip: text; line-height: 1.15;
+    }
+    .glass-card {
+        background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 24px; backdrop-filter: blur(20px);
+    }
+    .detail-row {
+        display: flex; justify-content: space-between; align-items: flex-start;
+        padding: 0.75rem 0; border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .detail-row:last-child { border-bottom: none; }
+    .detail-label { font-size: 0.75rem; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.07em; }
+    .detail-value { font-size: 0.9rem; color: rgba(255,255,255,0.85); text-align: right; max-width: 60%; }
+    .chat-btn {
+        width: 100%; padding: 1rem;
+        background: linear-gradient(135deg, #7c3aed, #4f46e5);
+        border: none; border-radius: 14px; color: #fff;
+        font-family: 'Syne', sans-serif; font-size: 1rem;
+        font-weight: 700; cursor: pointer; transition: all 0.2s ease;
+        text-decoration: none; display: block; text-align: center;
+    }
+    .chat-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 30px rgba(124,58,237,0.4); }
+    .orb { position: absolute; border-radius: 50%; filter: blur(80px); pointer-events: none; opacity: 0.15; }
+    .live-dot {
+        width: 8px; height: 8px; background: #7c3aed; border-radius: 50%;
+        display: inline-block; animation: glow-pulse 1.8s ease-in-out infinite;
+    }
+    @keyframes glow-pulse {
+        0%, 100% { box-shadow: 0 0 4px 2px rgba(124,58,237,0.6); }
+        50%       { box-shadow: 0 0 10px 4px rgba(124,58,237,0.9); }
+    }
+    .countdown-box {
+        display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;
+        margin: 1.5rem 0;
+    }
+    .countdown-unit {
+        text-align: center;
+        background: rgba(255,255,255,0.04);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 14px; padding: 0.875rem 1.25rem; min-width: 70px;
+    }
+    .countdown-num {
+        font-family: 'Syne', sans-serif; font-size: 1.75rem;
+        font-weight: 800; color: #c4b5fd; display: block; line-height: 1;
+    }
+    .countdown-lbl {
+        font-size: 0.65rem; color: rgba(255,255,255,0.3);
+        text-transform: uppercase; letter-spacing: 0.08em; margin-top: 0.3rem;
+        display: block;
+    }
+    main { padding: 0 !important; max-width: 100% !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="events-page relative">
+
+    <div class="orb" style="width:500px;height:500px;background:#7c3aed;top:-100px;right:-100px;"></div>
+    <div class="orb" style="width:400px;height:400px;background:#4f46e5;bottom:-50px;left:-100px;"></div>
+
+    <div style="max-width:600px; margin:0 auto; padding:3rem 1.5rem;">
+
+        <!-- Back -->
+        <a href="/map/"
+           style="color:rgba(255,255,255,0.4); font-size:0.85rem; text-decoration:none;
+                  display:inline-flex; align-items:center; gap:0.4rem; margin-bottom:2rem;">
+            ← Back to Map
+        </a>
+
+        <!-- Status badge -->
+        <div style="margin-bottom:1rem;">
+            {% if event.is_live %}
+                <span style="display:inline-flex; align-items:center; gap:0.5rem;
+                             background:rgba(124,58,237,0.15); border:1px solid rgba(124,58,237,0.3);
+                             border-radius:100px; padding:0.4rem 1rem;
+                             color:#c4b5fd; font-size:0.8rem; font-weight:600;">
+                    <span class="live-dot"></span> Live Now
+                </span>
+            {% elif not event.is_payment_verified %}
+                <span style="display:inline-flex; align-items:center; gap:0.5rem;
+                             background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.25);
+                             border-radius:100px; padding:0.4rem 1rem;
+                             color:#fbbf24; font-size:0.8rem; font-weight:600;">
+                    ⏳ Pending Payment
+                </span>
+            {% elif not event.is_active %}
+                <span style="display:inline-flex; align-items:center; gap:0.5rem;
+                             background:rgba(107,114,128,0.15); border:1px solid rgba(107,114,128,0.25);
+                             border-radius:100px; padding:0.4rem 1rem;
+                             color:rgba(255,255,255,0.3); font-size:0.8rem; font-weight:600;">
+                    ✓ Ended
+                </span>
+            {% else %}
+                <span style="display:inline-flex; align-items:center; gap:0.5rem;
+                             background:rgba(99,102,241,0.12); border:1px solid rgba(99,102,241,0.25);
+                             border-radius:100px; padding:0.4rem 1rem;
+                             color:#a5b4fc; font-size:0.8rem; font-weight:600;">
+                    🕐 Upcoming
+                </span>
+            {% endif %}
+        </div>
+
+        <!-- Title -->
+        <h1 class="hero-title" style="margin-bottom:0.5rem;">{{ event.name }}</h1>
+        <p style="color:rgba(255,255,255,0.4); font-size:0.9rem; margin-bottom:2rem;">
+            {{ event.establishment.name }} · {{ event.establishment.city }}
+        </p>
+
+        {% if event.description %}
+        <p style="color:rgba(255,255,255,0.65); font-size:0.95rem; line-height:1.7;
+                  margin-bottom:2rem;">
+            {{ event.description }}
+        </p>
+        {% endif %}
+
+        <!-- Countdown (shown only for upcoming events) -->
+        {% if event.is_payment_verified and event.is_active and not event.is_live %}
+        <div style="margin-bottom:2rem;">
+            <p style="color:rgba(255,255,255,0.3); font-size:0.75rem; text-transform:uppercase;
+                      letter-spacing:0.08em; text-align:center; margin-bottom:0.5rem;">
+                Starts in
+            </p>
+            <div class="countdown-box" id="countdown">
+                <div class="countdown-unit"><span class="countdown-num" id="cd-days">--</span><span class="countdown-lbl">Days</span></div>
+                <div class="countdown-unit"><span class="countdown-num" id="cd-hours">--</span><span class="countdown-lbl">Hours</span></div>
+                <div class="countdown-unit"><span class="countdown-num" id="cd-mins">--</span><span class="countdown-lbl">Mins</span></div>
+                <div class="countdown-unit"><span class="countdown-num" id="cd-secs">--</span><span class="countdown-lbl">Secs</span></div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Event details card -->
+        <div class="glass-card" style="padding:1.5rem; margin-bottom:1.5rem;">
+            <div class="detail-row">
+                <span class="detail-label">Starts</span>
+                <span class="detail-value">{{ event.start_datetime|date:"d M Y, g:i A" }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Ends</span>
+                <span class="detail-value">{{ event.end_datetime|date:"d M Y, g:i A" }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Venue</span>
+                <span class="detail-value">{{ event.establishment.name }}</span>
+            </div>
+            {% if event.establishment.address %}
+            <div class="detail-row">
+                <span class="detail-label">Address</span>
+                <span class="detail-value">{{ event.establishment.address }}, {{ event.establishment.city }}</span>
+            </div>
+            {% endif %}
+            {% if event.establishment.contact_phone %}
+            <div class="detail-row">
+                <span class="detail-label">Contact</span>
+                <span class="detail-value">{{ event.establishment.contact_phone }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Chat button -->
+        {% if event.is_live and event.chat_room %}
+            <a href="/chat/{{ event.chat_room.room_name }}/" class="chat-btn">
+                💬 Join Live Chat
+            </a>
+            <p style="color:rgba(255,255,255,0.25); font-size:0.75rem; text-align:center; margin-top:0.75rem;">
+                Live group chat — open during the event
+            </p>
+        {% elif event.is_payment_verified and event.is_active and not event.is_live %}
+            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07);
+                        border-radius:14px; padding:1rem; text-align:center;">
+                <p style="color:rgba(255,255,255,0.3); font-size:0.875rem; margin:0;">
+                    💬 Chat opens when the event goes live
+                </p>
+            </div>
+        {% endif %}
+
+        <!-- Establishment card -->
+        <div class="glass-card" style="padding:1.25rem 1.5rem; margin-top:1.5rem;">
+            <p style="color:rgba(255,255,255,0.3); font-size:0.7rem; text-transform:uppercase;
+                      letter-spacing:0.08em; margin-bottom:0.75rem;">Hosted by</p>
+            <div style="display:flex; align-items:center; gap:1rem;">
+                {% if event.establishment.photo %}
+                    <img src="{{ event.establishment.photo.url }}"
+                         style="width:48px; height:48px; object-fit:cover; border-radius:12px;">
+                {% else %}
+                    <div style="width:48px; height:48px; background:rgba(139,92,246,0.15);
+                                border-radius:12px; display:flex; align-items:center;
+                                justify-content:center; font-size:1.5rem;">🏪</div>
+                {% endif %}
+                <div>
+                    <p style="color:#fff; font-weight:600; font-size:0.95rem; margin:0;">
+                        {{ event.establishment.name }}
+                    </p>
+                    <p style="color:rgba(255,255,255,0.4); font-size:0.8rem; margin:0;">
+                        {{ event.establishment.get_category_display }} · {{ event.establishment.city }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+{% if event.is_payment_verified and event.is_active and not event.is_live %}
+<script>
+    const target = new Date("{{ event.start_datetime|date:'Y-m-d' }}T{{ event.start_datetime|date:'H:i:s' }}").getTime();
+
+    function tick() {
+        const now = Date.now();
+        const diff = target - now;
+        if (diff <= 0) {
+            document.getElementById('countdown').innerHTML =
+                '<p style="color:#c4b5fd; font-size:1rem;">Starting now!</p>';
+            return;
+        }
+        const d = Math.floor(diff / 86400000);
+        const h = Math.floor((diff % 86400000) / 3600000);
+        const m = Math.floor((diff % 3600000) / 60000);
+        const s = Math.floor((diff % 60000) / 1000);
+        document.getElementById('cd-days').textContent  = String(d).padStart(2,'0');
+        document.getElementById('cd-hours').textContent = String(h).padStart(2,'0');
+        document.getElementById('cd-mins').textContent  = String(m).padStart(2,'0');
+        document.getElementById('cd-secs').textContent  = String(s).padStart(2,'0');
+    }
+    tick();
+    setInterval(tick, 1000);
+</script>
+{% endif %}
+{% endblock %}

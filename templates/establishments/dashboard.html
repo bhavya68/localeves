@@ -7,9 +7,7 @@
     <div class="max-w-md mx-auto text-center">
         <div class="bg-amber-50 border border-amber-200 rounded-2xl p-8">
             <div class="text-4xl mb-3">⏳</div>
-            <h2 class="text-xl font-bold text-amber-800 mb-2">
-                Verification Pending
-            </h2>
+            <h2 class="text-xl font-bold text-amber-800 mb-2">Verification Pending</h2>
             <p class="text-amber-700 text-sm mb-4">
                 Your establishment is registered but not yet verified.
                 Enter the OTP sent to your email to complete verification.
@@ -24,7 +22,6 @@
     </div>
 
     {% else %}
-    <!-- Verified owner dashboard -->
     <div class="mb-8 flex items-center justify-between gap-4 flex-wrap">
         <div>
             <h1 class="text-2xl font-bold text-gray-900">
@@ -47,23 +44,19 @@
             {% for establishment in establishments %}
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
 
-                    <!-- Photo -->
                     {% if establishment.photo %}
                         <img src="{{ establishment.photo.url }}"
                              alt="{{ establishment.name }}"
                              class="w-full h-40 object-cover">
                     {% else %}
-                        <div class="w-full h-40 bg-indigo-50 flex
-                                    items-center justify-center">
+                        <div class="w-full h-40 bg-indigo-50 flex items-center justify-center">
                             <span class="text-4xl">🏪</span>
                         </div>
                     {% endif %}
 
                     <div class="p-4">
                         <div class="flex items-start justify-between mb-2">
-                            <h3 class="font-semibold text-gray-900">
-                                {{ establishment.name }}
-                            </h3>
+                            <h3 class="font-semibold text-gray-900">{{ establishment.name }}</h3>
                             {% if establishment.is_verified %}
                                 <span class="text-xs bg-green-100 text-green-700
                                              px-2 py-0.5 rounded-full font-medium shrink-0">
@@ -78,8 +71,7 @@
                         </div>
 
                         <p class="text-xs text-gray-500 mb-1">
-                            {{ establishment.get_category_display }}
-                            · {{ establishment.city }}
+                            {{ establishment.get_category_display }} · {{ establishment.city }}
                         </p>
 
                         {% if establishment.description %}
@@ -88,10 +80,24 @@
                             </p>
                         {% endif %}
 
-                        <div class="mt-4 pt-3 border-t border-gray-100 flex gap-2">
-                            <a href="#"
+                        <!-- Active event badge -->
+                        {% for event in establishment.events.all %}
+                            {% if event.is_live %}
+                                <div class="mt-3 flex items-center gap-1.5 text-xs text-purple-700
+                                            bg-purple-50 border border-purple-200 rounded-lg px-2.5 py-1.5">
+                                    <span style="width:6px;height:6px;background:#7c3aed;border-radius:50%;
+                                                 display:inline-block;"></span>
+                                    <span class="font-medium">Live:</span>
+                                    <a href="{% url 'events:event_detail' event.id %}"
+                                       class="hover:underline truncate">{{ event.name }}</a>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+
+                        <div class="mt-4 pt-3 border-t border-gray-100 flex gap-2 flex-wrap items-center">
+                            <a href="{% url 'establishments:edit' establishment.slug %}"
                                class="text-xs text-indigo-600 hover:underline font-medium">
-                                Edit Details
+                                Edit
                             </a>
                             {% if establishment.is_verified %}
                                 <span class="text-gray-300">·</span>
@@ -100,6 +106,11 @@
                                     Create Event
                                 </a>
                             {% endif %}
+                            <span class="text-gray-300">·</span>
+                            <a href="{% url 'establishments:delete' establishment.slug %}"
+                               class="text-xs text-red-500 hover:underline font-medium ml-auto">
+                                Delete
+                            </a>
                         </div>
                     </div>
 
@@ -110,12 +121,8 @@
     {% else %}
         <div class="text-center py-16">
             <div class="text-5xl mb-4">🏪</div>
-            <h2 class="text-xl font-bold text-gray-900 mb-2">
-                No establishments yet
-            </h2>
-            <p class="text-gray-500 text-sm mb-6">
-                Register your first establishment to get started.
-            </p>
+            <h2 class="text-xl font-bold text-gray-900 mb-2">No establishments yet</h2>
+            <p class="text-gray-500 text-sm mb-6">Register your first establishment to get started.</p>
             <a href="{% url 'establishments:register' %}"
                class="inline-block bg-indigo-600 text-white px-6 py-2.5
                       rounded-lg font-medium text-sm hover:bg-indigo-700

@@ -1,5 +1,5 @@
 import random
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
@@ -14,7 +14,6 @@ User = get_user_model()
 def owner_register(request):
 
     if request.method == 'POST':
-
         name = request.POST.get('name', '').strip()
         category = request.POST.get('category', 'other')
         description = request.POST.get('description', '').strip()
@@ -27,10 +26,8 @@ def owner_register(request):
         photo = request.FILES.get('photo')
 
         errors = []
-
         if not name:
             errors.append('Establishment name is required.')
-
         if not latitude or not longitude:
             errors.append('Please select your establishment location on the map.')
 
@@ -41,7 +38,6 @@ def owner_register(request):
                 'categories': Establishment.CATEGORY_CHOICES,
             })
 
-        # Create the establishment
         establishment = Establishment.objects.create(
             owner=request.user,
             name=name,
@@ -57,29 +53,19 @@ def owner_register(request):
             is_verified=False,
         )
 
-        # Verified owners skip the OTP flow — their identity is already confirmed.
-        # We auto-verify the new establishment and keep them as 'owner'.
         if request.user.user_type == 'owner':
             establishment.is_verified = True
             establishment.save(update_fields=['is_verified'])
-            messages.success(
-                request,
-                f'"{name}" has been added and is now live on the map!'
-            )
+            messages.success(request, f'"{name}" has been added and is now live on the map!')
             return redirect('establishments:dashboard')
 
-        # First-time registrants: go through OTP verification
         if request.user.user_type == 'normal':
             request.user.user_type = 'guest_owner'
             request.user.save(update_fields=['user_type'])
 
         otp_code = str(random.randint(100000, 999999))
 
-        # Invalidate any existing unused OTPs for this user
-        OwnerOTP.objects.filter(
-            user=request.user,
-            is_used=False,
-        ).update(is_used=True)
+        OwnerOTP.objects.filter(user=request.user, is_used=False).update(is_used=True)
 
         OwnerOTP.objects.create(
             user=request.user,
@@ -89,7 +75,6 @@ def owner_register(request):
         )
 
         from django.core.mail import send_mail
-
         send_mail(
             subject='LocalEves — Your Owner Verification OTP',
             message=f'''
@@ -112,15 +97,103 @@ If you did not register on LocalEves, please ignore this email.
             fail_silently=False,
         )
 
-        messages.success(
-            request,
-            'Establishment registered! Check your email for the OTP.'
-        )
+        messages.success(request, 'Establishment registered! Check your email for the OTP.')
         return redirect('establishments:verify_otp')
 
-    # GET request — show the form
     return render(request, 'establishments/register.html', {
         'categories': Establishment.CATEGORY_CHOICES,
+    })
+
+
+@login_required
+def edit_establishment(request, slug):
+    establishment = get_object_or_404(Establishment, slug=slug, owner=request.user)
+
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        category = request.POST.get('category', 'other')
+        description = request.POST.get('description', '').strip()
+        address = request.POST.get('address', '').strip()
+        city = request.POST.get('city', '').strip()
+        contact_phone = request.POST.get('contact_phone', '').strip()
+        contact_email = request.POST.get('contact_email', '').strip()
+        latitude = request.POST.get('latitude', '').strip()
+        longitude = request.POST.get('longitude', '').strip()
+        photo = request.FILES.get('photo')
+        clear_photo = request.POST.get('clear_photo') == '1'
+
+        errors = []
+        if not name:
+            errors.append('Establishment name is required.')
+        if not latitude or not longitude:
+            errors.append('Please select your establishment location on the map.')
+
+        if errors:
+            return render(request, 'establishments/edit.html', {
+                'establishment': establishment,
+                'errors': errors,
+                'form_data': request.POST,
+                'categories': Establishment.CATEGORY_CHOICES,
+            })
+
+        establishment.name = name
+        establishment.category = category
+        establishment.description = description
+        establishment.address = address
+        establishment.city = city
+        establishment.contact_phone = contact_phone
+        establishment.contact_email = contact_email
+        establishment.latitude = latitude
+        establishment.longitude = longitude
+
+        if clear_photo:
+            establishment.photo = None
+        elif photo:
+            establishment.photo = photo
+
+        establishment.save()
+
+        messages.success(request, f'"{name}" has been updated successfully.')
+        return redirect('establishments:dashboard')
+
+    return render(request, 'establishments/edit.html', {
+        'establishment': establishment,
+        'categories': Establishment.CATEGORY_CHOICES,
+    })
+
+
+@login_required
+def delete_establishment(request, slug):
+    establishment = get_object_or_404(Establishment, slug=slug, owner=request.user)
+
+    if request.method == 'POST':
+        # Block deletion if there's an active live event
+        from django.utils import timezone
+        from events.models import Event
+        now = timezone.now()
+        has_live_event = Event.objects.filter(
+            establishment=establishment,
+            is_active=True,
+            is_payment_verified=True,
+            start_datetime__lte=now,
+            end_datetime__gte=now,
+        ).exists()
+
+        if has_live_event:
+            messages.error(
+                request,
+                f'Cannot delete "{establishment.name}" — it has a live event running right now.'
+            )
+            return redirect('establishments:dashboard')
+
+        name = establishment.name
+        establishment.delete()
+        messages.success(request, f'"{name}" has been deleted.')
+        return redirect('establishments:dashboard')
+
+    # GET — show confirmation page
+    return render(request, 'establishments/delete_confirm.html', {
+        'establishment': establishment,
     })
 
 
@@ -168,10 +241,7 @@ def verify_otp(request):
         request.user.user_type = 'owner'
         request.user.save(update_fields=['user_type'])
 
-        messages.success(
-            request,
-            'Congratulations! Your establishment is now verified on LocalEves.'
-        )
+        messages.success(request, 'Congratulations! Your establishment is now verified on LocalEves.')
         return redirect('establishments:dashboard')
 
     return render(request, 'establishments/verify_otp.html')

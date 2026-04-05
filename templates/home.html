@@ -1,47 +1,224 @@
 {% extends 'base.html' %}
-
 {% block title %}LocalEves — Discover Local Events{% endblock %}
 
+{% block extra_head %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+
+    .hero-section {
+        font-family: 'DM Sans', sans-serif;
+        background: #0a0a0f;
+        min-height: calc(100vh - 4rem);
+        position: relative;
+        overflow: hidden;
+    }
+    .hero-title {
+        font-family: 'Syne', sans-serif; font-weight: 800;
+        font-size: clamp(2.5rem, 6vw, 4.5rem);
+        background: linear-gradient(135deg, #fff 0%, #a78bfa 50%, #6d28d9 100%);
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        background-clip: text; line-height: 1.1;
+    }
+    .orb { position: absolute; border-radius: 50%; filter: blur(100px); pointer-events: none; }
+    .glass-card {
+        background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 20px; backdrop-filter: blur(20px);
+        padding: 1.75rem; transition: border-color 0.2s;
+    }
+    .glass-card:hover { border-color: rgba(139,92,246,0.3); }
+    .cta-primary {
+        background: linear-gradient(135deg, #7c3aed, #4f46e5);
+        color: #fff; padding: 0.875rem 2rem; border-radius: 12px;
+        font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem;
+        text-decoration: none; display: inline-block;
+        transition: all 0.2s ease;
+    }
+    .cta-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(124,58,237,0.4); }
+    .cta-secondary {
+        background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+        color: rgba(255,255,255,0.8); padding: 0.875rem 2rem; border-radius: 12px;
+        font-family: 'Syne', sans-serif; font-weight: 600; font-size: 1rem;
+        text-decoration: none; display: inline-block;
+        transition: all 0.2s ease;
+    }
+    .cta-secondary:hover { background: rgba(255,255,255,0.1); }
+    .stat-num {
+        font-family: 'Syne', sans-serif; font-size: 2.25rem;
+        font-weight: 800; color: #c4b5fd;
+    }
+    .step-num {
+        width: 36px; height: 36px; border-radius: 10px;
+        background: linear-gradient(135deg, rgba(124,58,237,0.3), rgba(79,70,229,0.3));
+        border: 1px solid rgba(124,58,237,0.4);
+        display: flex; align-items: center; justify-content: center;
+        font-family: 'Syne', sans-serif; font-weight: 700;
+        color: #c4b5fd; font-size: 0.9rem; shrink: 0;
+    }
+    main { padding: 0 !important; max-width: 100% !important; }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="text-center py-20">
+<div class="hero-section">
 
-    <h1 class="text-4xl font-bold text-gray-900 mb-4 leading-tight">
-        Discover What's Happening Near You
-    </h1>
-    
+    <!-- Background orbs -->
+    <div class="orb" style="width:600px;height:600px;background:#7c3aed;opacity:0.12;top:-200px;right:-100px;"></div>
+    <div class="orb" style="width:500px;height:500px;background:#4f46e5;opacity:0.10;bottom:-100px;left:-150px;"></div>
+    <div class="orb" style="width:300px;height:300px;background:#a78bfa;opacity:0.08;top:40%;left:40%;"></div>
 
-    <p class="text-gray-500 text-lg mb-8 max-w-xl mx-auto leading-relaxed">
-        LocalEves connects you with local establishments
-        and their events — all on one interactive map.
-    </p>
+    <div style="max-width:1100px; margin:0 auto; padding:5rem 1.5rem 4rem;">
 
+        <!-- HERO -->
+        <div style="text-align:center; max-width:780px; margin:0 auto 5rem;">
 
-    {% if user.is_authenticated %}
-        <a href="/map/"
-           class="inline-block bg-indigo-600 text-white
-                  px-8 py-3 rounded-lg font-medium
-                  hover:bg-indigo-700 transition-colors duration-200">
-            Explore the Map
-        </a>
-        
-    {% else %}
-        <div class="flex gap-4 justify-center flex-wrap">
-        
-            <a href="{% url 'account_signup' %}"
-               class="inline-block bg-indigo-600 text-white
-                      px-8 py-3 rounded-lg font-medium
-                      hover:bg-indigo-700 transition-colors duration-200">
-                Get Started
-            </a>
-            <a href="{% url 'account_login' %}"
-               class="inline-block bg-white text-indigo-600
-                      px-8 py-3 rounded-lg font-medium
-                      border border-indigo-200
-                      hover:bg-indigo-50 transition-colors duration-200">
-                Sign In
-            </a>
+            {% if live_count > 0 %}
+            <div style="display:inline-flex; align-items:center; gap:0.5rem;
+                        background:rgba(124,58,237,0.15); border:1px solid rgba(124,58,237,0.3);
+                        border-radius:100px; padding:0.45rem 1.1rem; margin-bottom:1.5rem;">
+                <span style="width:7px;height:7px;background:#7c3aed;border-radius:50%;
+                             animation:glow-pulse 1.8s ease-in-out infinite;display:inline-block;"></span>
+                <span style="color:#c4b5fd; font-size:0.8rem; font-weight:600;">
+                    {{ live_count }} event{{ live_count|pluralize }} happening right now
+                </span>
+            </div>
+            {% endif %}
+
+            <h1 class="hero-title" style="margin-bottom:1.25rem;">
+                Discover What's<br>Happening Near You
+            </h1>
+
+            <p style="color:rgba(255,255,255,0.5); font-size:1.1rem; line-height:1.7;
+                      margin-bottom:2.5rem; font-family:'DM Sans',sans-serif;">
+                LocalEves connects you with local establishments and their live events —
+                all on one interactive map with real-time group chat.
+            </p>
+
+            {% if user.is_authenticated %}
+                <a href="/map/" class="cta-primary">Explore the Map →</a>
+            {% else %}
+                <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;">
+                    <a href="{% url 'account_signup' %}" class="cta-primary">Get Started Free</a>
+                    <a href="{% url 'account_login' %}" class="cta-secondary">Sign In</a>
+                </div>
+            {% endif %}
         </div>
-    {% endif %}
 
+        <!-- STATS -->
+        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+                    gap:1rem; margin-bottom:5rem;">
+            <div class="glass-card" style="text-align:center;">
+                <div class="stat-num">{{ establishment_count }}+</div>
+                <p style="color:rgba(255,255,255,0.4); font-size:0.85rem; margin:0.25rem 0 0;">
+                    Establishments
+                </p>
+            </div>
+            <div class="glass-card" style="text-align:center;">
+                <div class="stat-num">{{ live_count }}</div>
+                <p style="color:rgba(255,255,255,0.4); font-size:0.85rem; margin:0.25rem 0 0;">
+                    Live Right Now
+                </p>
+            </div>
+            <div class="glass-card" style="text-align:center;">
+                <div class="stat-num">{{ upcoming_count }}</div>
+                <p style="color:rgba(255,255,255,0.4); font-size:0.85rem; margin:0.25rem 0 0;">
+                    Upcoming Events
+                </p>
+            </div>
+        </div>
+
+        <!-- HOW IT WORKS -->
+        <div style="margin-bottom:5rem;">
+            <p style="color:rgba(255,255,255,0.3); font-size:0.75rem; text-transform:uppercase;
+                      letter-spacing:0.1em; text-align:center; margin-bottom:0.75rem;">
+                How it works
+            </p>
+            <h2 style="font-family:'Syne',sans-serif; font-size:clamp(1.5rem,3vw,2rem);
+                       font-weight:700; color:#fff; text-align:center; margin-bottom:2.5rem;">
+                Three steps to discover local events
+            </h2>
+
+            <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:1.25rem;">
+
+                <div class="glass-card">
+                    <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:1rem;">
+                        <div class="step-num">1</div>
+                        <span style="font-size:1.5rem;">📍</span>
+                    </div>
+                    <h3 style="font-family:'Syne',sans-serif; font-weight:700; color:#fff;
+                               font-size:1rem; margin-bottom:0.5rem;">
+                        Open the Map
+                    </h3>
+                    <p style="color:rgba(255,255,255,0.4); font-size:0.875rem; line-height:1.6; margin:0;">
+                        See all verified local establishments as pins on an interactive map around you.
+                    </p>
+                </div>
+
+                <div class="glass-card">
+                    <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:1rem;">
+                        <div class="step-num">2</div>
+                        <span style="font-size:1.5rem;">✨</span>
+                    </div>
+                    <h3 style="font-family:'Syne',sans-serif; font-weight:700; color:#fff;
+                               font-size:1rem; margin-bottom:0.5rem;">
+                        Spot Live Events
+                    </h3>
+                    <p style="color:rgba(255,255,255,0.4); font-size:0.875rem; line-height:1.6; margin:0;">
+                        Glowing pins mean something's happening right now — sales, launches, pop-ups, and more.
+                    </p>
+                </div>
+
+                <div class="glass-card">
+                    <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:1rem;">
+                        <div class="step-num">3</div>
+                        <span style="font-size:1.5rem;">💬</span>
+                    </div>
+                    <h3 style="font-family:'Syne',sans-serif; font-weight:700; color:#fff;
+                               font-size:1rem; margin-bottom:0.5rem;">
+                        Join the Chat
+                    </h3>
+                    <p style="color:rgba(255,255,255,0.4); font-size:0.875rem; line-height:1.6; margin:0;">
+                        Every live event gets its own real-time group chat. Connect with people there.
+                    </p>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- FOR OWNERS -->
+        <div class="glass-card" style="display:flex; align-items:center; justify-content:space-between;
+                    gap:2rem; flex-wrap:wrap; background:rgba(124,58,237,0.08);
+                    border-color:rgba(124,58,237,0.2);">
+            <div>
+                <p style="color:#c4b5fd; font-size:0.8rem; text-transform:uppercase;
+                          letter-spacing:0.08em; margin-bottom:0.5rem; font-weight:600;">
+                    For Business Owners
+                </p>
+                <h3 style="font-family:'Syne',sans-serif; font-weight:700; color:#fff;
+                           font-size:1.25rem; margin-bottom:0.5rem;">
+                    Put your establishment on the map
+                </h3>
+                <p style="color:rgba(255,255,255,0.4); font-size:0.875rem; line-height:1.6; margin:0;">
+                    Register your business, create events, and engage customers with live chat — all in one place.
+                </p>
+            </div>
+            {% if user.is_authenticated %}
+                <a href="{% url 'establishments:register' %}" class="cta-primary" style="white-space:nowrap;">
+                    Register Establishment
+                </a>
+            {% else %}
+                <a href="{% url 'account_signup' %}" class="cta-primary" style="white-space:nowrap;">
+                    Get Started Free
+                </a>
+            {% endif %}
+        </div>
+
+    </div>
 </div>
+
+<style>
+@keyframes glow-pulse {
+    0%, 100% { box-shadow: 0 0 4px 2px rgba(124,58,237,0.6); }
+    50%       { box-shadow: 0 0 10px 4px rgba(124,58,237,0.9); }
+}
+</style>
 {% endblock %}

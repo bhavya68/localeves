@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+{% block title %}Edit — {{ establishment.name }} — LocalEves{% endblock %}
+
+{% block extra_head %}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+
+        <div class="mb-6">
+            <a href="{% url 'establishments:dashboard' %}"
+               class="text-sm text-indigo-600 hover:underline">← Back to Dashboard</a>
+        </div>
+
+        <h1 class="text-2xl font-bold text-gray-900 mb-1">Edit Establishment</h1>
+        <p class="text-gray-500 text-sm mb-8">Update your establishment's details below.</p>
+
+        {% if errors %}
+        <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            {% for error in errors %}
+                <p class="text-red-700 text-sm">⚠ {{ error }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <form method="POST"
+              action="{% url 'establishments:edit' establishment.slug %}"
+              enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Establishment Name *
+                    </label>
+                    <input type="text" name="name"
+                           value="{{ establishment.name }}"
+                           class="w-full border border-gray-300 rounded-lg
+                                  px-3 py-2 text-sm focus:outline-none
+                                  focus:ring-2 focus:ring-indigo-500">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Category *
+                    </label>
+                    <select name="category"
+                            class="w-full border border-gray-300 rounded-lg
+                                   px-3 py-2 text-sm focus:outline-none
+                                   focus:ring-2 focus:ring-indigo-500">
+                        {% for value, label in categories %}
+                            <option value="{{ value }}"
+                                {% if establishment.category == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">City *</label>
+                    <input type="text" name="city"
+                           value="{{ establishment.city }}"
+                           class="w-full border border-gray-300 rounded-lg
+                                  px-3 py-2 text-sm focus:outline-none
+                                  focus:ring-2 focus:ring-indigo-500">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Contact Phone</label>
+                    <input type="text" name="contact_phone"
+                           value="{{ establishment.contact_phone }}"
+                           class="w-full border border-gray-300 rounded-lg
+                                  px-3 py-2 text-sm focus:outline-none
+                                  focus:ring-2 focus:ring-indigo-500">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Contact Email</label>
+                    <input type="email" name="contact_email"
+                           value="{{ establishment.contact_email }}"
+                           class="w-full border border-gray-300 rounded-lg
+                                  px-3 py-2 text-sm focus:outline-none
+                                  focus:ring-2 focus:ring-indigo-500">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Photo
+                    </label>
+                    {% if establishment.photo %}
+                        <div class="mb-2 flex items-center gap-3">
+                            <img src="{{ establishment.photo.url }}"
+                                 alt="Current photo"
+                                 class="w-16 h-16 object-cover rounded-lg border border-gray-200">
+                            <div>
+                                <p class="text-xs text-gray-500 mb-1">Current photo</p>
+                                <label class="flex items-center gap-1.5 text-xs text-red-600 cursor-pointer">
+                                    <input type="checkbox" name="remove_photo" value="1"
+                                           class="rounded">
+                                    Remove photo
+                                </label>
+                            </div>
+                        </div>
+                    {% endif %}
+                    <input type="file" name="photo" accept="image/*"
+                           class="w-full border border-gray-300 rounded-lg
+                                  px-3 py-2 text-sm focus:outline-none
+                                  focus:ring-2 focus:ring-indigo-500">
+                    {% if establishment.photo %}
+                        <p class="text-xs text-gray-400 mt-1">Upload a new photo to replace the current one.</p>
+                    {% endif %}
+                </div>
+
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                <input type="text" name="address"
+                       value="{{ establishment.address }}"
+                       class="w-full border border-gray-300 rounded-lg
+                              px-3 py-2 text-sm focus:outline-none
+                              focus:ring-2 focus:ring-indigo-500">
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea name="description" rows="4"
+                          class="w-full border border-gray-300 rounded-lg
+                                 px-3 py-2 text-sm focus:outline-none
+                                 focus:ring-2 focus:ring-indigo-500 resize-none">{{ establishment.description }}</textarea>
+            </div>
+
+            <div class="flex gap-3">
+                <button type="submit"
+                        class="flex-1 bg-indigo-600 text-white py-2.5
+                               rounded-lg font-medium text-sm
+                               hover:bg-indigo-700 transition-colors duration-200
+                               cursor-pointer">
+                    Save Changes
+                </button>
+                <a href="{% url 'establishments:dashboard' %}"
+                   class="px-6 py-2.5 border border-gray-300 text-gray-700
+                          rounded-lg font-medium text-sm hover:bg-gray-50
+                          transition-colors duration-200 text-center">
+                    Cancel
+                </a>
+            </div>
+
+        </form>
+    </div>
+</div>
+{% endblock %}
