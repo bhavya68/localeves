@@ -1,300 +1,495 @@
 {% extends 'base.html' %}
 
-{% block title %}Register Your Establishment — LocalEves{% endblock %}
+{% block title %}Register Establishment — LocalEves{% endblock %}
 
 {% block extra_head %}
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    body { background: #141414 !important; }
+    main { padding: 0 !important; max-width: 100% !important; }
+    * { box-sizing: border-box; }
+
+    .page {
+        font-family: 'Inter', sans-serif;
+        background: #141414;
+        min-height: 100vh;
+        display: grid;
+        grid-template-columns: 300px 1fr;
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+        background: #1c1c1c;
+        border-right: 1px solid #252525;
+        display: flex;
+        flex-direction: column;
+        position: sticky;
+        top: 0;
+        height: calc(100vh - 4rem);
+        overflow-y: auto;
+    }
+    .sidebar-top {
+        padding: 1.5rem 1.25rem 1.25rem;
+        border-bottom: 1px solid #232323;
+    }
+    .back-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.78rem;
+        color: #555;
+        text-decoration: none;
+        margin-bottom: 1.25rem;
+        transition: color 0.15s;
+    }
+    .back-btn:hover { color: #888; }
+    .sidebar-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #e8e8e8;
+        margin-bottom: 0.3rem;
+    }
+    .sidebar-sub {
+        font-size: 0.76rem;
+        color: #4a4a4a;
+        line-height: 1.5;
+    }
+
+    .steps-list {
+        padding: 1rem 0.875rem;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+    .step {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.65rem 0.75rem;
+        border-radius: 9px;
+        border: 1px solid transparent;
+    }
+    .step.active {
+        background: #192519;
+        border-color: #264026;
+    }
+    .step-num {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        border: 1.5px solid #333;
+        background: #222;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.62rem;
+        font-weight: 700;
+        color: #4a4a4a;
+        flex-shrink: 0;
+    }
+    .step.active .step-num {
+        background: #22c55e;
+        border-color: #22c55e;
+        color: #000;
+    }
+    .step-name {
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: #444;
+    }
+    .step.active .step-name { color: #d4d4d4; }
+
+    .sidebar-footer {
+        padding: 1rem 0.875rem;
+        border-top: 1px solid #232323;
+    }
+    .info-card {
+        background: #192519;
+        border: 1px solid #264026;
+        border-radius: 10px;
+        padding: 0.875rem;
+    }
+    .info-card-label {
+        font-size: 0.62rem;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #22c55e;
+        margin-bottom: 0.4rem;
+    }
+    .info-card p {
+        font-size: 0.75rem;
+        color: #4a6a4a;
+        line-height: 1.55;
+        margin: 0;
+    }
+
+    /* FORM AREA */
+    .form-area {
+        padding: 2rem 2.25rem 4rem;
+    }
+    .page-eyebrow {
+        font-size: 0.62rem;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #22c55e;
+        margin-bottom: 0.4rem;
+    }
+    .page-heading {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #fff;
+        margin-bottom: 0.35rem;
+    }
+    .page-sub {
+        font-size: 0.8rem;
+        color: #4a4a4a;
+        margin-bottom: 1.75rem;
+        line-height: 1.5;
+    }
+
+    .error-box {
+        background: #2a1818;
+        border: 1px solid #4a2222;
+        border-radius: 9px;
+        padding: 0.875rem 1rem;
+        margin-bottom: 1.25rem;
+    }
+    .error-box p { font-size: 0.78rem; color: #f87171; margin: 0.1rem 0; }
+
+    .form-card {
+        background: #1c1c1c;
+        border: 1px solid #252525;
+        border-radius: 14px;
+        padding: 1.375rem;
+        margin-bottom: 1rem;
+    }
+    .card-head {
+        display: flex;
+        align-items: center;
+        gap: 0.625rem;
+        margin-bottom: 1.1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid #222;
+    }
+    .card-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 7px;
+        background: #192519;
+        border: 1px solid #264026;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+    }
+    .card-title {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #ccc;
+    }
+
+    .field-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.875rem;
+        margin-bottom: 0.875rem;
+    }
+    .field-row:last-child { margin-bottom: 0; }
+    .field-full { grid-column: 1 / -1; }
+    .field { display: flex; flex-direction: column; gap: 0.35rem; }
+
+    .f-label {
+        font-size: 0.68rem;
+        font-weight: 500;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #4a4a4a;
+    }
+    .f-label .req { color: #f87171; margin-left: 1px; }
+
+    .f-input, .f-select, .f-textarea {
+        background: #222;
+        border: 1px solid #2e2e2e;
+        border-radius: 8px;
+        padding: 0.65rem 0.8rem;
+        color: #e0e0e0;
+        font-family: 'Inter', sans-serif;
+        font-size: 0.83rem;
+        outline: none;
+        transition: border-color 0.15s, background 0.15s;
+        width: 100%;
+    }
+    .f-input::placeholder, .f-textarea::placeholder { color: #353535; }
+    .f-input:focus, .f-select:focus, .f-textarea:focus {
+        border-color: #22c55e;
+        background: #192519;
+    }
+    .f-select {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23555'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+        background-size: 13px;
+        padding-right: 2rem;
+        cursor: pointer;
+    }
+    .f-select option { background: #1c1c1c; }
+    .f-textarea { resize: vertical; min-height: 85px; }
+
+    .file-wrap { position: relative; }
+    .file-wrap input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+    .file-face {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        background: #222;
+        border: 1px dashed #333;
+        border-radius: 8px;
+        padding: 0.65rem 0.8rem;
+        cursor: pointer;
+        transition: border-color 0.15s, background 0.15s;
+    }
+    .file-face:hover { border-color: #22c55e; background: #192519; }
+    .file-tag {
+        font-size: 0.68rem;
+        font-weight: 600;
+        background: #192519;
+        border: 1px solid #264026;
+        color: #22c55e;
+        padding: 0.18rem 0.55rem;
+        border-radius: 5px;
+    }
+    .file-name-text { font-size: 0.8rem; color: #404040; }
+
+    .map-hint { font-size: 0.76rem; color: #444; margin-bottom: 0.75rem; line-height: 1.5; }
+    #map { width: 100%; height: 270px; border-radius: 9px; border: 1px solid #2a2a2a; overflow: hidden; }
+    .map-status-txt { font-size: 0.73rem; color: #22c55e; margin-top: 0.45rem; min-height: 1em; }
+    .coords-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        background: #192519;
+        border: 1px solid #264026;
+        border-radius: 100px;
+        padding: 0.22rem 0.65rem;
+        font-size: 0.7rem;
+        color: #22c55e;
+        margin-top: 0.45rem;
+    }
+    .leaflet-tile { filter: brightness(0.32) saturate(0.35); }
+    .leaflet-container { background: #181818; }
+
+    .form-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+        padding-top: 0.25rem;
+    }
+    .form-note { font-size: 0.75rem; color: #393939; line-height: 1.5; max-width: 340px; }
+    .submit-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        background: #22c55e;
+        border: none;
+        border-radius: 9px;
+        color: #000;
+        font-family: 'Inter', sans-serif;
+        font-size: 0.85rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background 0.15s, transform 0.15s;
+        white-space: nowrap;
+    }
+    .submit-btn:hover { background: #16a34a; transform: translateY(-1px); }
+
+    @media (max-width: 860px) {
+        .page { grid-template-columns: 1fr; }
+        .sidebar { position: static; height: auto; }
+        .form-area { padding: 1.5rem; }
+        .field-row { grid-template-columns: 1fr; }
+    }
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="max-w-3xl mx-auto">
+<div class="page">
 
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+    <aside class="sidebar">
+        <div class="sidebar-top">
+            <a href="{% url 'home' %}" class="back-btn">← Back</a>
+            <div class="sidebar-title">Add Establishment</div>
+            <div class="sidebar-sub">Register your business on the LocalEves map.</div>
+        </div>
 
-        <h1 class="text-2xl font-bold text-gray-900 mb-1">
-            Register Your Establishment
-        </h1>
-        <p class="text-gray-500 text-sm mb-8">
-            Fill in your details and pin your location on the map.
-        </p>
-
-        <!-- Error Display -->
-        {% if errors %}
-            <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                {% for error in errors %}
-                    <p class="text-red-700 text-sm">⚠ {{ error }}</p>
-                {% endfor %}
+        <div class="steps-list">
+            <div class="step active">
+                <div class="step-num">1</div>
+                <span class="step-name">Basic Details</span>
             </div>
+            <div class="step">
+                <div class="step-num">2</div>
+                <span class="step-name">Contact & Media</span>
+            </div>
+            <div class="step">
+                <div class="step-num">3</div>
+                <span class="step-name">Pin Location</span>
+            </div>
+            <div class="step">
+                <div class="step-num">4</div>
+                <span class="step-name">OTP Verification</span>
+            </div>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="info-card">
+                <div class="info-card-label">What you get</div>
+                <p>Verified map pin · Owner dashboard · Live event hosting with group chat</p>
+            </div>
+        </div>
+    </aside>
+
+    <div class="form-area">
+        <p class="page-eyebrow">LocalEves Owners</p>
+        <h1 class="page-heading">Register Your Establishment</h1>
+        <p class="page-sub">Fill in the details below. After submitting, we'll send an OTP to verify ownership.</p>
+
+        {% if errors %}
+        <div class="error-box">
+            {% for error in errors %}<p>⚠ {{ error }}</p>{% endfor %}
+        </div>
         {% endif %}
 
-        <form method="POST"
-              action="{% url 'establishments:register' %}"
-              enctype="multipart/form-data">
+        <form method="POST" action="{% url 'establishments:register' %}" enctype="multipart/form-data">
             {% csrf_token %}
 
-        
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                        Establishment Name *
-                    </label>
-                    <input type="text"
-                           name="name"
-                           value="{{ form_data.name }}"
-                           placeholder="e.g. Aone Cafe"
-                           class="w-full border border-gray-300 rounded-lg
-                                  px-3 py-2 text-sm focus:outline-none
-                                  focus:ring-2 focus:ring-indigo-500">
-                 
+            <div class="form-card">
+                <div class="card-head">
+                    <div class="card-icon">🏪</div>
+                    <span class="card-title">Basic Information</span>
                 </div>
-
-                <!-- Category -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                        Category *
-                    </label>
-                    <select name="category"
-                            class="w-full border border-gray-300 rounded-lg
-                                   px-3 py-2 text-sm focus:outline-none
-                                   focus:ring-2 focus:ring-indigo-500">
-                        {% for value, label in categories %}
-                            <option value="{{ value }}"
-                                {% if form_data.category == value %}selected{% endif %}>
-                                {{ label }}
-                            </option>
-                          
-                        {% endfor %}
-                    </select>
+                <div class="field-row">
+                    <div class="field field-full">
+                        <label class="f-label">Establishment Name <span class="req">*</span></label>
+                        <input type="text" name="name" class="f-input" value="{{ form_data.name }}" placeholder="e.g. Aone Cafe">
+                    </div>
                 </div>
-
-                <!-- City -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                        City *
-                    </label>
-                    <input type="text"
-                           name="city"
-                           value="{{ form_data.city }}"
-                           placeholder="e.g. Hisar"
-                           class="w-full border border-gray-300 rounded-lg
-                                  px-3 py-2 text-sm focus:outline-none
-                                  focus:ring-2 focus:ring-indigo-500">
+                <div class="field-row">
+                    <div class="field">
+                        <label class="f-label">Category <span class="req">*</span></label>
+                        <select name="category" class="f-select">
+                            {% for value, label in categories %}
+                            <option value="{{ value }}" {% if form_data.category == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label class="f-label">City <span class="req">*</span></label>
+                        <input type="text" name="city" class="f-input" value="{{ form_data.city }}" placeholder="e.g. Hisar">
+                    </div>
                 </div>
-
-                <!-- Contact Phone -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                        Contact Phone
-                    </label>
-                    <input type="text"
-                           name="contact_phone"
-                           value="{{ form_data.contact_phone }}"
-                           placeholder="+91 98765 43210"
-                           class="w-full border border-gray-300 rounded-lg
-                                  px-3 py-2 text-sm focus:outline-none
-                                  focus:ring-2 focus:ring-indigo-500">
+                <div class="field-row">
+                    <div class="field field-full">
+                        <label class="f-label">Description</label>
+                        <textarea name="description" class="f-textarea" placeholder="Tell visitors what makes your place special…">{{ form_data.description }}</textarea>
+                    </div>
                 </div>
-
-                <!-- Contact Email -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                        Contact Email
-                    </label>
-                    <input type="email"
-                           name="contact_email"
-                           value="{{ form_data.contact_email }}"
-                           placeholder="info@yourcafe.com"
-                           class="w-full border border-gray-300 rounded-lg
-                                  px-3 py-2 text-sm focus:outline-none
-                                  focus:ring-2 focus:ring-indigo-500">
-                </div>
-
-                <!-- Photo -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                        Establishment Photo
-                    </label>
-                    <input type="file"
-                           name="photo"
-                           accept="image/*"
-                           class="w-full border border-gray-300 rounded-lg
-                                  px-3 py-2 text-sm focus:outline-none
-                                  focus:ring-2 focus:ring-indigo-500">
-                </div>
-
             </div>
 
-            <!-- Address -->
-            <div class="mb-6">
-                <label class="block text-sm font-medium text-gray-700 mb-1">
-                    Address
-                </label>
-                <input type="text"
-                       name="address"
-                       value="{{ form_data.address }}"
-                       placeholder="Street address"
-                       class="w-full border border-gray-300 rounded-lg
-                              px-3 py-2 text-sm focus:outline-none
-                              focus:ring-2 focus:ring-indigo-500">
+            <div class="form-card">
+                <div class="card-head">
+                    <div class="card-icon">📞</div>
+                    <span class="card-title">Contact & Media</span>
+                </div>
+                <div class="field-row">
+                    <div class="field">
+                        <label class="f-label">Phone</label>
+                        <input type="text" name="contact_phone" class="f-input" value="{{ form_data.contact_phone }}" placeholder="+91 98765 43210">
+                    </div>
+                    <div class="field">
+                        <label class="f-label">Email</label>
+                        <input type="email" name="contact_email" class="f-input" value="{{ form_data.contact_email }}" placeholder="info@cafe.com">
+                    </div>
+                </div>
+                <div class="field-row">
+                    <div class="field field-full">
+                        <label class="f-label">Street Address</label>
+                        <input type="text" name="address" class="f-input" value="{{ form_data.address }}" placeholder="Street, landmark…">
+                    </div>
+                </div>
+                <div class="field-row">
+                    <div class="field field-full">
+                        <label class="f-label">Photo</label>
+                        <div class="file-wrap">
+                            <input type="file" name="photo" accept="image/*" id="photo-input">
+                            <div class="file-face">
+                                <span class="file-tag">Choose</span>
+                                <span class="file-name-text" id="file-name-display">No file selected</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <!-- Description -->
-            <div class="mb-6">
-                <label class="block text-sm font-medium text-gray-700 mb-1">
-                    Description
-                </label>
-                <textarea name="description"
-                          rows="3"
-                          placeholder="Tell users about your establishment..."
-                          class="w-full border border-gray-300 rounded-lg
-                                 px-3 py-2 text-sm focus:outline-none
-                                 focus:ring-2 focus:ring-indigo-500
-                                 resize-none">{{ form_data.description }}</textarea>
-                
-               
-            </div>
-
-            
-            <div class="mb-6">
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Pin Your Location *
-                </label>
-                <p class="text-gray-400 text-xs mb-3">
-                    Click anywhere on the map to drop a pin at your establishment's location.
-                </p>
-                <p id="map-status"
-                     class="hidden text-xs text-indigo-600 mb-2 font-medium">
-                </p>
-
-                
-                <div id="map"
-                     class="w-full h-80 rounded-xl border border-gray-300 z-0">
+            <div class="form-card">
+                <div class="card-head">
+                    <div class="card-icon">📍</div>
+                    <span class="card-title">Pin Location <span style="color:#f87171;font-size:0.72rem;">*</span></span>
                 </div>
-               
-
-                
-                <div id="coordinates-display"
-                     class="mt-2 text-xs text-gray-500 hidden">
-                    📍 Selected: <span id="lat-display"></span>, <span id="lng-display"></span>
+                <p class="map-hint">Click on the map to drop a pin at your establishment's exact location.</p>
+                <p id="map-status" class="map-status-txt"></p>
+                <div id="map"></div>
+                <div id="coords-display" style="display:none;">
+                    <span class="coords-pill">📍 <span id="lat-display"></span>, <span id="lng-display"></span></span>
                 </div>
-                
-              
                 <input type="hidden" name="latitude" id="latitude">
                 <input type="hidden" name="longitude" id="longitude">
-               
-
             </div>
 
-            <button type="submit"
-                    class="w-full bg-indigo-600 text-white py-3
-                           rounded-lg font-medium hover:bg-indigo-700
-                           transition-colors duration-200 cursor-pointer">
-                Register Establishment
-            </button>
-
+            <div class="form-footer">
+                <p class="form-note">An OTP will be sent to your email to verify ownership of this establishment.</p>
+                <button type="submit" class="submit-btn">Register →</button>
+            </div>
         </form>
     </div>
+
 </div>
 {% endblock %}
 
 {% block extra_scripts %}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
 <script>
-    
-    const DEFAULT_LAT = 29.1492;
-    const DEFAULT_LNG = 75.7217;
-    const DEFAULT_ZOOM = 14;
-
-
+    document.getElementById('photo-input').addEventListener('change', function() {
+        document.getElementById('file-name-display').textContent = this.files[0] ? this.files[0].name : 'No file selected';
+    });
     const map = L.map('map');
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '© <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>'
-    }).addTo(map);
-
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
     let marker = null;
-
-
+    const statusEl = document.getElementById('map-status');
     if (navigator.geolocation) {
-     
-        document.getElementById('map-status').textContent = '📍 Getting your location...';
-        document.getElementById('map-status').classList.remove('hidden');
-
+        statusEl.textContent = 'Detecting your location…';
         navigator.geolocation.getCurrentPosition(
-
-           
-            function(position) {
-                const userLat = position.coords.latitude;
-                const userLng = position.coords.longitude;
-
-               
-                map.setView([userLat, userLng], 16);
-
-                
-                L.circle([userLat, userLng], {
-                    radius: position.coords.accuracy,
-                    color: '#4F46E5',
-                    fillColor: '#4F46E5',
-                    fillOpacity: 0.1,
-                    weight: 1,
-                }).addTo(map);
-
-                document.getElementById('map-status').textContent =
-                    '✓ Location found. Click to pin your establishment.';
-            },
-
-           
-            function(error) {
-                let message = 'Could not get location. ';
-                if (error.code === 1) {
-                    message += 'Location permission denied.';
-                } else if (error.code === 2) {
-                    message += 'Location unavailable.';
-                } else {
-                    message += 'Request timed out.';
-                }
-                message += ' Defaulting to city centre — scroll to find your location.';
-
-                document.getElementById('map-status').textContent = message;
-
-                
-                map.setView([DEFAULT_LAT, DEFAULT_LNG], DEFAULT_ZOOM);
-            },
-
-           
-            {
-                timeout: 10000,
-                enableHighAccuracy: true,
-            }
+            p => { map.setView([p.coords.latitude, p.coords.longitude], 16); statusEl.textContent = '✓ Found — click to pin.'; },
+            () => { map.setView([29.1492, 75.7217], 14); statusEl.textContent = 'Scroll to find your location, then click.'; },
+            { timeout: 10000, enableHighAccuracy: true }
         );
-
-    } else {
-       
-        document.getElementById('map-status').textContent =
-            'Geolocation not supported. Scroll the map to find your location.';
-        map.setView([DEFAULT_LAT, DEFAULT_LNG], DEFAULT_ZOOM);
-    }
-
-    
+    } else { map.setView([29.1492, 75.7217], 14); }
     map.on('click', function(e) {
-        const lat = e.latlng.lat;
-        const lng = e.latlng.lng;
-
-        if (marker) {
-            marker.setLatLng(e.latlng);
-        } else {
-            marker = L.marker(e.latlng).addTo(map);
-        }
-
-        document.getElementById('latitude').value = lat;
-        document.getElementById('longitude').value = lng;
-        document.getElementById('lat-display').textContent = lat.toFixed(6);
-        document.getElementById('lng-display').textContent = lng.toFixed(6);
-        document.getElementById('coordinates-display').classList.remove('hidden');
-        document.getElementById('map-status').classList.add('hidden');
+        if (marker) marker.setLatLng(e.latlng);
+        else marker = L.marker(e.latlng).addTo(map);
+        document.getElementById('latitude').value = e.latlng.lat;
+        document.getElementById('longitude').value = e.latlng.lng;
+        document.getElementById('lat-display').textContent = e.latlng.lat.toFixed(6);
+        document.getElementById('lng-display').textContent = e.latlng.lng.toFixed(6);
+        document.getElementById('coords-display').style.display = 'block';
+        statusEl.textContent = '✓ Location pinned.';
     });
 </script>
 {% endblock %}
