@@ -1,137 +1,509 @@
 {% extends 'base.html' %}
-{% block title %}Owner Dashboard — LocalEves{% endblock %}
+{% block title %}Dashboard — LocalEves{% endblock %}
+
+{% block extra_head %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+
+<style>
+/* ── THEME — matches map page exactly ── */
+:root {
+    --bg:           #141414;
+    --surface:      #1a1a1a;
+    --surface-2:    #202020;
+    --surface-3:    #2a2a2a;
+    --border:       rgba(255,255,255,0.07);
+    --border-2:     rgba(255,255,255,0.11);
+    --accent:       #6ee7b7;
+    --accent-dim:   rgba(110,231,183,0.12);
+    --accent-border:rgba(110,231,183,0.25);
+    --text:         #f0f0f0;
+    --text-2:       #888;
+    --text-3:       #555;
+    --danger:       #f87171;
+    --danger-dim:   rgba(248,113,113,0.1);
+    --danger-border:rgba(248,113,113,0.25);
+    --warning:      #fbbf24;
+    --warning-dim:  rgba(251,191,36,0.1);
+    --warning-border:rgba(251,191,36,0.25);
+    --font:         'DM Sans', system-ui, sans-serif;
+    --radius:       12px;
+    --radius-sm:    8px;
+    --radius-xs:    6px;
+}
+
+/* override base.html body bg */
+body {
+    background: var(--bg) !important;
+    font-family: var(--font) !important;
+    color: var(--text) !important;
+}
+
+/* ── NAV override for dark ── */
+.nav {
+    background: rgba(20,20,20,0.92) !important;
+    border-bottom: 1px solid var(--border) !important;
+    backdrop-filter: blur(16px) !important;
+}
+.nav-logo { color: var(--text) !important; }
+.nav-link { color: var(--text-2) !important; }
+.nav-link:hover { color: var(--text) !important; background: var(--surface-2) !important; }
+.nav-btn { background: var(--accent) !important; color: #0a0a0a !important; }
+.nav-btn:hover { background: #4dd9a0 !important; }
+.nav-sep { background: var(--border-2) !important; }
+
+/* ── MESSAGES ── */
+.messages-wrap { max-width: 1200px !important; }
+.message.success { background: var(--accent-dim) !important; border-color: var(--accent-border) !important; color: var(--accent) !important; }
+.message.error   { background: var(--danger-dim) !important; border-color: var(--danger-border) !important; color: var(--danger) !important; }
+.message.warning { background: var(--warning-dim) !important; border-color: var(--warning-border) !important; color: var(--warning) !important; }
+.message.info    { background: var(--accent-dim) !important; border-color: var(--accent-border) !important; color: var(--accent) !important; }
+
+/* ── LAYOUT ── */
+.dash-wrap {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+}
+
+/* ── HEADER ── */
+.dash-header {
+    display: flex; align-items: flex-end;
+    justify-content: space-between; gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+}
+.dash-greeting {
+    font-size: 0.75rem; font-weight: 600;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--text-3); margin-bottom: 0.375rem;
+}
+.dash-title {
+    font-size: 1.625rem; font-weight: 700;
+    color: var(--text); letter-spacing: -0.02em;
+    line-height: 1.2;
+}
+.dash-subtitle { font-size: 0.875rem; color: var(--text-2); margin-top: 0.25rem; }
+
+.add-btn {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    background: var(--accent); color: #0a0a0a;
+    font-family: var(--font); font-size: 0.875rem; font-weight: 600;
+    padding: 0.55rem 1.125rem; border-radius: var(--radius-sm);
+    text-decoration: none; border: none; cursor: pointer;
+    transition: all 0.15s; white-space: nowrap;
+}
+.add-btn:hover { background: #4dd9a0; transform: translateY(-1px); }
+.add-btn svg { width: 14px; height: 14px; }
+
+/* ── STATS ROW ── */
+.stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 2rem;
+}
+.stat-card {
+    background: var(--surface);
+    padding: 1.25rem 1.5rem;
+    position: relative;
+    overflow: hidden;
+}
+.stat-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent);
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+.stat-card:hover::before { opacity: 1; }
+.stat-label {
+    font-size: 0.75rem; font-weight: 500;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--text-3); margin-bottom: 0.625rem;
+}
+.stat-value {
+    font-size: 1.875rem; font-weight: 700;
+    color: var(--text); letter-spacing: -0.03em;
+    line-height: 1;
+}
+.stat-value.accent { color: var(--accent); }
+.stat-sub {
+    font-size: 0.775rem; color: var(--text-3);
+    margin-top: 0.375rem;
+}
+
+/* ── SECTION HEADER ── */
+.section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 1rem;
+}
+.section-title {
+    font-size: 0.75rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--text-3);
+}
+
+/* ── ESTABLISHMENT GRID ── */
+.est-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+.est-card {
+    background: var(--surface);
+    display: flex; flex-direction: column;
+    position: relative;
+    transition: background 0.15s;
+}
+.est-card:hover { background: var(--surface-2); }
+
+/* Live card accent */
+.est-card.is-live::after {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent);
+}
+
+.est-media {
+    position: relative; height: 160px; overflow: hidden;
+    flex-shrink: 0;
+}
+.est-media img {
+    width: 100%; height: 100%; object-fit: cover;
+    transition: transform 0.3s ease;
+}
+.est-card:hover .est-media img { transform: scale(1.03); }
+.est-media-ph {
+    width: 100%; height: 100%;
+    background: var(--surface-3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2.5rem;
+}
+
+/* Status overlay on photo */
+.est-status-overlay {
+    position: absolute; top: 0.75rem; right: 0.75rem;
+    display: flex; gap: 0.375rem;
+}
+.est-badge {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    font-size: 0.7rem; font-weight: 600;
+    padding: 0.2rem 0.55rem; border-radius: 100px;
+    backdrop-filter: blur(8px);
+}
+.est-badge-verified {
+    background: rgba(110,231,183,0.2);
+    border: 1px solid rgba(110,231,183,0.35);
+    color: var(--accent);
+}
+.est-badge-pending {
+    background: rgba(251,191,36,0.15);
+    border: 1px solid rgba(251,191,36,0.3);
+    color: var(--warning);
+}
+.est-badge-live {
+    background: rgba(110,231,183,0.2);
+    border: 1px solid rgba(110,231,183,0.35);
+    color: var(--accent);
+}
+.live-dot-sm {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--accent);
+    animation: live-pulse 1.8s ease-in-out infinite;
+    display: inline-block;
+}
+@keyframes live-pulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(110,231,183,0.6); }
+    50%      { box-shadow: 0 0 0 4px rgba(110,231,183,0); }
+}
+
+/* Card body */
+.est-body {
+    padding: 1.125rem 1.25rem;
+    flex: 1; display: flex; flex-direction: column;
+}
+.est-name {
+    font-size: 0.9375rem; font-weight: 600;
+    color: var(--text); margin-bottom: 0.25rem;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.est-meta {
+    font-size: 0.8rem; color: var(--text-2); margin-bottom: 0.625rem;
+}
+.est-desc {
+    font-size: 0.8375rem; color: var(--text-3); line-height: 1.5;
+    margin-bottom: 0.75rem;
+    display: -webkit-box; -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical; overflow: hidden;
+}
+
+/* Live event strip */
+.est-live-strip {
+    display: flex; align-items: center; gap: 0.5rem;
+    background: var(--accent-dim);
+    border: 1px solid var(--accent-border);
+    border-radius: var(--radius-xs);
+    padding: 0.475rem 0.75rem;
+    margin-bottom: 0.75rem;
+    text-decoration: none;
+    transition: background 0.15s;
+}
+.est-live-strip:hover { background: rgba(110,231,183,0.18); }
+.est-live-strip span { font-size: 0.8rem; color: var(--accent); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Card actions */
+.est-actions {
+    display: flex; align-items: center;
+    gap: 0; margin-top: auto;
+    padding-top: 0.875rem;
+    border-top: 1px solid var(--border);
+}
+.est-action {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    font-size: 0.8125rem; font-weight: 500;
+    color: var(--text-2); text-decoration: none;
+    padding: 0.4rem 0.75rem; border-radius: var(--radius-xs);
+    transition: all 0.15s; cursor: pointer;
+    background: none; border: none; font-family: var(--font);
+}
+.est-action:hover { background: var(--surface-3); color: var(--text); }
+.est-action.accent { color: var(--accent); }
+.est-action.accent:hover { background: var(--accent-dim); }
+.est-action.danger { color: var(--danger); margin-left: auto; }
+.est-action.danger:hover { background: var(--danger-dim); }
+.est-action-sep {
+    width: 1px; height: 16px;
+    background: var(--border-2); flex-shrink: 0;
+}
+
+/* ── PENDING BANNER ── */
+.pending-banner {
+    max-width: 480px; margin: 4rem auto;
+    background: var(--surface);
+    border: 1px solid var(--warning-border);
+    border-radius: var(--radius);
+    padding: 2.5rem 2rem; text-align: center;
+}
+.pending-icon { font-size: 2.25rem; margin-bottom: 1rem; }
+.pending-title {
+    font-size: 1.25rem; font-weight: 700;
+    color: var(--text); margin-bottom: 0.5rem;
+}
+.pending-desc {
+    font-size: 0.9rem; color: var(--text-2);
+    line-height: 1.7; margin-bottom: 1.5rem;
+}
+.otp-btn {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    background: var(--warning); color: #0a0a0a;
+    font-family: var(--font); font-size: 0.875rem; font-weight: 600;
+    padding: 0.6rem 1.375rem; border-radius: var(--radius-sm);
+    text-decoration: none; transition: all 0.15s;
+}
+.otp-btn:hover { background: #f6d05b; }
+
+/* ── EMPTY STATE ── */
+.empty-state {
+    text-align: center;
+    padding: 5rem 1.5rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+.empty-icon { font-size: 2.5rem; margin-bottom: 1rem; }
+.empty-title {
+    font-size: 1.125rem; font-weight: 600;
+    color: var(--text); margin-bottom: 0.375rem;
+}
+.empty-desc { font-size: 0.9rem; color: var(--text-2); margin-bottom: 1.5rem; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 640px) {
+    .stats-row { grid-template-columns: 1fr; }
+    .est-grid  { grid-template-columns: 1fr; }
+    .dash-title { font-size: 1.375rem; }
+}
+</style>
+{% endblock %}
 
 {% block content %}
+<div class="dash-wrap">
 
-    {% if is_guest %}
-    <div class="max-w-md mx-auto text-center">
-        <div class="bg-amber-50 border border-amber-200 rounded-2xl p-8">
-            <div class="text-4xl mb-3">⏳</div>
-            <h2 class="text-xl font-bold text-amber-800 mb-2">Verification Pending</h2>
-            <p class="text-amber-700 text-sm mb-4">
-                Your establishment is registered but not yet verified.
-                Enter the OTP sent to your email to complete verification.
-            </p>
-            <a href="{% url 'establishments:verify_otp' %}"
-               class="inline-block bg-amber-600 text-white px-6 py-2.5
-                      rounded-lg font-medium text-sm hover:bg-amber-700
-                      transition-colors duration-200">
-                Enter OTP
-            </a>
-        </div>
+{# ── PENDING OWNER ── #}
+{% if is_guest %}
+<div class="pending-banner">
+    <div class="pending-icon">⏳</div>
+    <h2 class="pending-title">Verification pending</h2>
+    <p class="pending-desc">
+        Your establishment is registered and waiting for verification.
+        Enter the OTP sent to your email to go live on the map.
+    </p>
+    <a href="{% url 'establishments:verify_otp' %}" class="otp-btn">
+        Enter OTP →
+    </a>
+</div>
+
+{# ── VERIFIED OWNER DASHBOARD ── #}
+{% else %}
+
+{# HEADER #}
+<div class="dash-header">
+    <div>
+        <p class="dash-greeting">Owner dashboard</p>
+        <h1 class="dash-title">{{ request.user.get_short_name }}</h1>
+        <p class="dash-subtitle">Manage your establishments and events.</p>
     </div>
+    <a href="{% url 'establishments:register' %}" class="add-btn">
+        <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+        </svg>
+        Add establishment
+    </a>
+</div>
 
-    {% else %}
-    <div class="mb-8 flex items-center justify-between gap-4 flex-wrap">
-        <div>
-            <h1 class="text-2xl font-bold text-gray-900">
-                Welcome, {{ request.user.get_short_name }}
-            </h1>
-            <p class="text-gray-500 text-sm mt-1">
-                Manage your establishments and events from here.
-            </p>
-        </div>
-        <a href="{% url 'establishments:register' %}"
-           class="inline-block bg-indigo-600 text-white px-5 py-2.5
-                  rounded-lg font-medium text-sm hover:bg-indigo-700
-                  transition-colors duration-200 shrink-0">
-            + Add Establishment
-        </a>
+{# STATS #}
+{% if establishments %}
+{% with total=establishments.count %}
+<div class="stats-row">
+    <div class="stat-card">
+        <p class="stat-label">Establishments</p>
+        <p class="stat-value">{{ total }}</p>
+        <p class="stat-sub">registered under your account</p>
     </div>
+    <div class="stat-card">
+        <p class="stat-label">Live right now</p>
+        <p class="stat-value accent" id="live-stat">—</p>
+        <p class="stat-sub">events currently active</p>
+    </div>
+    <div class="stat-card">
+        <p class="stat-label">Verified</p>
+        <p class="stat-value">
+            {% with v=establishments|length %}{{ v }}{% endwith %}
+        </p>
+        <p class="stat-sub">visible on the map</p>
+    </div>
+</div>
+{% endwith %}
+{% endif %}
 
-    {% if establishments %}
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {% for establishment in establishments %}
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+{# ESTABLISHMENTS #}
+{% if establishments %}
 
-                    {% if establishment.photo %}
-                        <img src="{{ establishment.photo.url }}"
-                             alt="{{ establishment.name }}"
-                             class="w-full h-40 object-cover">
-                    {% else %}
-                        <div class="w-full h-40 bg-indigo-50 flex items-center justify-center">
-                            <span class="text-4xl">🏪</span>
-                        </div>
+<div class="section-header">
+    <p class="section-title">Your establishments</p>
+</div>
+
+<div class="est-grid">
+    {% for est in establishments %}
+
+    {# Check if any event is live #}
+    {% with has_live=False %}
+    {% for event in est.events.all %}{% if event.is_live %}{% with has_live=True %}{% endwith %}{% endif %}{% endfor %}
+
+    <div class="est-card {% for event in est.events.all %}{% if event.is_live %}is-live{% endif %}{% endfor %}">
+
+        {# MEDIA #}
+        <div class="est-media">
+            {% if est.photo %}
+                <img src="{{ est.photo.url }}" alt="{{ est.name }}">
+            {% else %}
+                <div class="est-media-ph">🏪</div>
+            {% endif %}
+
+            <div class="est-status-overlay">
+                {% if est.is_verified %}
+                    <span class="est-badge est-badge-verified">✓ Verified</span>
+                {% else %}
+                    <span class="est-badge est-badge-pending">Pending</span>
+                {% endif %}
+                {% for event in est.events.all %}
+                    {% if event.is_live %}
+                        <span class="est-badge est-badge-live">
+                            <span class="live-dot-sm"></span> Live
+                        </span>
                     {% endif %}
+                {% endfor %}
+            </div>
+        </div>
 
-                    <div class="p-4">
-                        <div class="flex items-start justify-between mb-2">
-                            <h3 class="font-semibold text-gray-900">{{ establishment.name }}</h3>
-                            {% if establishment.is_verified %}
-                                <span class="text-xs bg-green-100 text-green-700
-                                             px-2 py-0.5 rounded-full font-medium shrink-0">
-                                    ✓ Verified
-                                </span>
-                            {% else %}
-                                <span class="text-xs bg-amber-100 text-amber-700
-                                             px-2 py-0.5 rounded-full font-medium shrink-0">
-                                    Pending
-                                </span>
-                            {% endif %}
-                        </div>
+        {# BODY #}
+        <div class="est-body">
+            <p class="est-name">{{ est.name }}</p>
+            <p class="est-meta">{{ est.get_category_display }} · {{ est.city }}</p>
 
-                        <p class="text-xs text-gray-500 mb-1">
-                            {{ establishment.get_category_display }} · {{ establishment.city }}
-                        </p>
+            {% if est.description %}
+                <p class="est-desc">{{ est.description }}</p>
+            {% endif %}
 
-                        {% if establishment.description %}
-                            <p class="text-xs text-gray-400 mt-2 line-clamp-2">
-                                {{ establishment.description }}
-                            </p>
-                        {% endif %}
-
-                        <!-- Active event badge -->
-                        {% for event in establishment.events.all %}
-                            {% if event.is_live %}
-                                <div class="mt-3 flex items-center gap-1.5 text-xs text-purple-700
-                                            bg-purple-50 border border-purple-200 rounded-lg px-2.5 py-1.5">
-                                    <span style="width:6px;height:6px;background:#7c3aed;border-radius:50%;
-                                                 display:inline-block;"></span>
-                                    <span class="font-medium">Live:</span>
-                                    <a href="{% url 'events:event_detail' event.id %}"
-                                       class="hover:underline truncate">{{ event.name }}</a>
-                                </div>
-                            {% endif %}
-                        {% endfor %}
-
-                        <div class="mt-4 pt-3 border-t border-gray-100 flex gap-2 flex-wrap items-center">
-                            <a href="{% url 'establishments:edit' establishment.slug %}"
-                               class="text-xs text-indigo-600 hover:underline font-medium">
-                                Edit
-                            </a>
-                            {% if establishment.is_verified %}
-                                <span class="text-gray-300">·</span>
-                                <a href="{% url 'events:create_event' establishment.slug %}"
-                                   class="text-xs text-indigo-600 hover:underline font-medium">
-                                    Create Event
-                                </a>
-                            {% endif %}
-                            <span class="text-gray-300">·</span>
-                            <a href="{% url 'establishments:delete' establishment.slug %}"
-                               class="text-xs text-red-500 hover:underline font-medium ml-auto">
-                                Delete
-                            </a>
-                        </div>
-                    </div>
-
-                </div>
+            {# Live event strip #}
+            {% for event in est.events.all %}
+                {% if event.is_live %}
+                <a href="{% url 'events:event_detail' event.id %}" class="est-live-strip">
+                    <span class="live-dot-sm"></span>
+                    <span>{{ event.name }}</span>
+                </a>
+                {% endif %}
             {% endfor %}
+
+            {# Actions #}
+            <div class="est-actions">
+                <a href="{% url 'establishments:edit' est.slug %}" class="est-action">
+                    Edit
+                </a>
+
+                {% if est.is_verified %}
+                    <div class="est-action-sep"></div>
+                    <a href="{% url 'events:create_event' est.slug %}" class="est-action accent">
+                        + Event
+                    </a>
+                {% endif %}
+
+                <a href="{% url 'establishments:delete' est.slug %}" class="est-action danger">
+                    Delete
+                </a>
+            </div>
         </div>
 
-    {% else %}
-        <div class="text-center py-16">
-            <div class="text-5xl mb-4">🏪</div>
-            <h2 class="text-xl font-bold text-gray-900 mb-2">No establishments yet</h2>
-            <p class="text-gray-500 text-sm mb-6">Register your first establishment to get started.</p>
-            <a href="{% url 'establishments:register' %}"
-               class="inline-block bg-indigo-600 text-white px-6 py-2.5
-                      rounded-lg font-medium text-sm hover:bg-indigo-700
-                      transition-colors duration-200">
-                Register Establishment
-            </a>
-        </div>
-    {% endif %}
+    </div>
+    {% endwith %}
+    {% endfor %}
+</div>
 
-    {% endif %}
+{# EMPTY #}
+{% else %}
+<div class="empty-state">
+    <div class="empty-icon">🏪</div>
+    <h2 class="empty-title">No establishments yet</h2>
+    <p class="empty-desc">Register your first one to appear on the map.</p>
+    <a href="{% url 'establishments:register' %}" class="add-btn">
+        + Register establishment
+    </a>
+</div>
+{% endif %}
 
+{% endif %}
+</div>
+
+<script>
+/* Count live events from DOM and update stat */
+document.addEventListener('DOMContentLoaded', () => {
+    const liveCards = document.querySelectorAll('.est-card.is-live').length;
+    const el = document.getElementById('live-stat');
+    if (el) el.textContent = liveCards;
+});
+</script>
 {% endblock %}

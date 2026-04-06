@@ -1,193 +1,664 @@
 {% extends 'base.html' %}
-
 {% block title %}Map — LocalEves{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet"
-      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+
 <style>
-    @keyframes glow-pulse {
-        0%, 100% { box-shadow: 0 0 6px 2px rgba(99, 102, 241, 0.6); }
-        50%       { box-shadow: 0 0 14px 6px rgba(99, 102, 241, 0.9); }
-    }
-    .glow-pin {
-        animation: glow-pulse 1.8s ease-in-out infinite;
-        border-radius: 50%;
-    }
+:root {
+    --map-bg:         #141414;
+    --sidebar-bg:     #1a1a1a;
+    --sidebar-border: rgba(255,255,255,0.07);
+    --card-bg:        #222222;
+    --card-hover:     #2a2a2a;
+    --accent:         #6ee7b7;
+    --accent-dim:     rgba(110,231,183,0.12);
+    --text:           #f0f0f0;
+    --text-2:         #888;
+    --text-3:         #555;
+    --pill-bg:        #2d2d2d;
+    --pill-border:    rgba(255,255,255,0.08);
+    --live-color:     #6ee7b7;
+    --font:           'DM Sans', system-ui, sans-serif;
+}
+
+/* ── LAYOUT ── */
+.map-shell {
+    display: flex;
+    height: calc(100vh - 56px);
+    overflow: hidden;
+    background: var(--map-bg);
+    font-family: var(--font);
+}
+
+/* ── SIDEBAR ── */
+.sidebar {
+    width: 340px; min-width: 340px;
+    background: var(--sidebar-bg);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+    border-right: 1px solid var(--sidebar-border);
+    z-index: 10;
+}
+.sidebar-head {
+    padding: 1.125rem 1.25rem 1rem;
+    border-bottom: 1px solid var(--sidebar-border);
+    flex-shrink: 0;
+}
+.sidebar-title {
+    font-size: 0.8rem; font-weight: 600;
+    color: var(--text-2); letter-spacing: 0.08em;
+    text-transform: uppercase; margin-bottom: 0.875rem;
+}
+.search-bar {
+    display: flex; align-items: center; gap: 0.5rem;
+    background: #242424; border: 1px solid var(--sidebar-border);
+    border-radius: 10px; padding: 0.5rem 0.875rem;
+    margin-bottom: 0.875rem; transition: border-color 0.15s;
+}
+.search-bar:focus-within { border-color: rgba(110,231,183,0.4); }
+.search-bar input {
+    background: none; border: none; outline: none;
+    color: var(--text); font-family: var(--font);
+    font-size: 0.875rem; width: 100%;
+}
+.search-bar input::placeholder { color: var(--text-3); }
+.filter-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.filter-pill {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    background: var(--pill-bg); border: 1px solid var(--pill-border);
+    border-radius: 8px; padding: 0.3rem 0.75rem;
+    font-size: 0.78rem; font-weight: 500; color: var(--text-2);
+    cursor: pointer; transition: all 0.15s; user-select: none;
+}
+.filter-pill:hover { border-color: rgba(110,231,183,0.3); color: var(--accent); }
+.filter-pill.active { background: var(--accent-dim); border-color: rgba(110,231,183,0.4); color: var(--accent); }
+
+/* ── SIDEBAR PANELS (list vs detail) ── */
+.sidebar-body {
+    flex: 1; overflow: hidden;
+    display: flex; flex-direction: column;
+    position: relative;
+}
+.sidebar-list {
+    flex: 1; overflow-y: auto;
+    scrollbar-width: thin; scrollbar-color: #333 transparent;
+}
+.sidebar-list::-webkit-scrollbar { width: 4px; }
+.sidebar-list::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+
+/* Detail panel slides in over list */
+.sidebar-detail {
+    position: absolute; inset: 0;
+    background: var(--sidebar-bg);
+    overflow-y: auto;
+    transform: translateX(100%);
+    transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);
+    scrollbar-width: thin; scrollbar-color: #333 transparent;
+    z-index: 5;
+}
+.sidebar-detail::-webkit-scrollbar { width: 4px; }
+.sidebar-detail::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+.sidebar-detail.open { transform: translateX(0); }
+
+.detail-back-btn {
+    display: flex; align-items: center; gap: 0.375rem;
+    padding: 0.875rem 1.25rem;
+    font-size: 0.8125rem; color: var(--text-2);
+    border-bottom: 1px solid var(--sidebar-border);
+    cursor: pointer; transition: color 0.15s;
+    background: none; border-top: none; border-left: none; border-right: none;
+    width: 100%; text-align: left; font-family: var(--font);
+}
+.detail-back-btn:hover { color: var(--text); }
+
+/* ── LIST ITEMS ── */
+.list-item {
+    display: flex; align-items: center; gap: 0.875rem;
+    padding: 0.75rem 1.25rem;
+    cursor: pointer; transition: background 0.12s;
+    border-left: 2px solid transparent;
+}
+.list-item:hover { background: #202020; }
+.list-item.active { background: #202020; border-left-color: var(--accent); }
+.list-avatar {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: #2d2d2d; border: 1px solid rgba(255,255,255,0.08);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.25rem; flex-shrink: 0; overflow: hidden;
+}
+.list-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.list-info { flex: 1; min-width: 0; }
+.list-name {
+    font-size: 0.9rem; font-weight: 500; color: var(--text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    margin-bottom: 0.2rem;
+}
+.list-sub { font-size: 0.775rem; color: var(--text-2); display: flex; align-items: center; gap: 0.35rem; }
+.list-sub .live-badge { color: var(--live-color); font-weight: 500; }
+.list-dot { width: 3px; height: 3px; border-radius: 50%; background: var(--text-3); flex-shrink: 0; }
+.list-fly-btn {
+    width: 28px; height: 28px; border-radius: 7px;
+    background: #2a2a2a; border: 1px solid rgba(255,255,255,0.06);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.15s;
+    color: var(--text-3); font-size: 0.75rem; flex-shrink: 0;
+}
+.list-fly-btn:hover { background: #333; color: var(--text-2); }
+
+/* ── SIDEBAR FOOTER ── */
+.sidebar-footer {
+    padding: 0.75rem 1.25rem;
+    border-top: 1px solid var(--sidebar-border);
+    display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0;
+}
+.live-pulse-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--live-color);
+    animation: pulse-ring 1.8s ease-in-out infinite;
+}
+@keyframes pulse-ring {
+    0%,100% { box-shadow: 0 0 0 0 rgba(110,231,183,0.6); }
+    50%      { box-shadow: 0 0 0 5px rgba(110,231,183,0); }
+}
+.sidebar-footer span { font-size: 0.8rem; color: var(--text-2); }
+.sidebar-footer strong { color: var(--accent); }
+
+/* ── MAP ── */
+.map-container { flex: 1; position: relative; }
+#map { width: 100%; height: 100%; }
+.leaflet-tile-pane {
+    filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9) saturate(0.5);
+}
+
+/* ── MARKERS ── */
+.marker-wrap { position: relative; }
+.marker-circle {
+    width: 42px; height: 42px; border-radius: 50%;
+    background: #1e1e1e; border: 2px solid rgba(255,255,255,0.15);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+    cursor: pointer; transition: transform 0.15s;
+}
+.marker-circle:hover { transform: scale(1.1); }
+.marker-circle.live {
+    border-color: var(--live-color);
+    animation: marker-pulse 2s ease-in-out infinite;
+}
+@keyframes marker-pulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(110,231,183,0.4), 0 4px 16px rgba(0,0,0,0.5); }
+    50%      { box-shadow: 0 0 0 8px rgba(110,231,183,0), 0 4px 16px rgba(0,0,0,0.5); }
+}
+
+/* ── POPUP ── */
+.leaflet-popup-content-wrapper {
+    background: #1e1e1e !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    border-radius: 14px !important;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.7) !important;
+    padding: 0 !important; min-width: 260px;
+}
+.leaflet-popup-tip-container { display: none; }
+.leaflet-popup-close-button { color: #555 !important; top: 10px !important; right: 12px !important; font-size: 1.125rem !important; }
+.leaflet-popup-close-button:hover { color: #888 !important; }
+.leaflet-popup-content { margin: 0 !important; width: auto !important; }
+
+.popup-inner { padding: 1.125rem; min-width: 240px; }
+.popup-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.875rem; }
+.popup-avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: #2d2d2d; border: 1px solid rgba(255,255,255,0.1);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.125rem; flex-shrink: 0; overflow: hidden;
+}
+.popup-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.popup-name { font-size: 0.9375rem; font-weight: 600; color: var(--text); margin-bottom: 0.125rem; }
+.popup-meta { font-size: 0.775rem; color: var(--text-2); display: flex; align-items: center; gap: 0.3rem; }
+.popup-meta .live-tag { color: var(--live-color); font-weight: 500; }
+.popup-pills { display: flex; gap: 0.4rem; margin-bottom: 0.875rem; flex-wrap: wrap; }
+.popup-pill {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    background: #2a2a2a; border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 7px; padding: 0.3rem 0.625rem;
+    font-size: 0.75rem; color: var(--text-2);
+}
+.popup-live-strip {
+    background: rgba(110,231,183,0.08); border: 1px solid rgba(110,231,183,0.2);
+    border-radius: 8px; padding: 0.6rem 0.75rem;
+    margin-bottom: 0.875rem; display: flex; align-items: center; gap: 0.5rem;
+}
+.popup-live-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--live-color); flex-shrink: 0;
+    animation: pulse-ring 1.8s ease-in-out infinite;
+}
+.popup-live-strip-text { font-size: 0.8rem; color: var(--live-color); font-weight: 500; flex: 1; }
+.popup-actions { display: flex; gap: 0.5rem; }
+.popup-btn {
+    flex: 1; padding: 0.575rem 0.5rem;
+    border-radius: 9px; font-size: 0.8375rem; font-weight: 500;
+    font-family: var(--font); border: none; cursor: pointer;
+    transition: all 0.15s; text-decoration: none;
+    display: flex; align-items: center; justify-content: center; gap: 0.3rem;
+}
+.popup-btn-primary { background: #efefef; color: #111; }
+.popup-btn-primary:hover { background: #fff; }
+.popup-btn-chat { background: rgba(110,231,183,0.15); color: var(--live-color); border: 1px solid rgba(110,231,183,0.25); }
+.popup-btn-chat:hover { background: rgba(110,231,183,0.25); }
+
+/* ── LOADING ── */
+#map-loading {
+    position: absolute; inset: 0; z-index: 999;
+    background: var(--map-bg);
+    display: flex; align-items: center; justify-content: center;
+}
+.loading-spinner {
+    width: 28px; height: 28px;
+    border: 2px solid #333; border-top-color: var(--accent);
+    border-radius: 50%; animation: spin 0.8s linear infinite;
+    margin: 0 auto 0.75rem;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+#map-loading p { font-size: 0.875rem; color: var(--text-2); font-family: var(--font); text-align: center; }
+
+/* ── EMPTY / LOADING STATES ── */
+.state-placeholder { padding: 3rem 1.25rem; text-align: center; }
+.state-placeholder .icon { font-size: 1.75rem; margin-bottom: 0.5rem; }
+.state-placeholder p { font-size: 0.875rem; color: var(--text-3); line-height: 1.6; }
+
+/* ── DETAIL PANEL CONTENT (styled for dark sidebar) ── */
+.det-photo { width: 100%; height: 150px; object-fit: cover; }
+.det-photo-ph {
+    width: 100%; height: 150px; background: #242424;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2.5rem; color: #444;
+}
+.det-body { padding: 1rem 1.25rem; }
+.det-name-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.25rem; }
+.det-name { font-size: 1rem; font-weight: 600; color: var(--text); }
+.det-badge {
+    font-size: 0.7rem; font-weight: 600; padding: 0.2rem 0.55rem;
+    border-radius: 100px; flex-shrink: 0;
+}
+.det-badge-verified { background: rgba(110,231,183,0.15); color: var(--live-color); border: 1px solid rgba(110,231,183,0.25); }
+.det-meta { font-size: 0.8rem; color: var(--text-2); margin-bottom: 0.875rem; }
+.det-desc { font-size: 0.85rem; color: var(--text-2); line-height: 1.6; margin-bottom: 0.875rem; }
+.det-contact { font-size: 0.8rem; color: var(--text-2); display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.375rem; }
+.det-contact a { color: var(--accent); text-decoration: none; }
+.det-contact a:hover { text-decoration: underline; }
+.det-sep { border: none; border-top: 1px solid var(--sidebar-border); margin: 0.875rem 0; }
+.det-event-card {
+    border-radius: 10px; padding: 0.75rem; margin-bottom: 0.625rem;
+}
+.det-event-live { background: rgba(110,231,183,0.07); border: 1px solid rgba(110,231,183,0.2); }
+.det-event-upcoming { background: #222; border: 1px solid rgba(255,255,255,0.06); }
+.det-event-label {
+    font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.08em; margin-bottom: 0.375rem;
+    display: flex; align-items: center; gap: 0.375rem;
+}
+.det-event-live .det-event-label { color: var(--live-color); }
+.det-event-upcoming .det-event-label { color: var(--text-2); }
+.det-event-name { font-size: 0.875rem; font-weight: 500; color: var(--text); margin-bottom: 0.25rem; }
+.det-event-sub { font-size: 0.775rem; color: var(--text-2); margin-bottom: 0.5rem; }
+.det-event-link { font-size: 0.775rem; font-weight: 500; color: var(--accent); text-decoration: none; }
+.det-event-link:hover { text-decoration: underline; }
+.det-chat-btn {
+    display: block; width: 100%; text-align: center; margin-top: 0.5rem;
+    background: rgba(110,231,183,0.15); color: var(--live-color);
+    border: 1px solid rgba(110,231,183,0.25); border-radius: 8px;
+    padding: 0.5rem; font-size: 0.8375rem; font-weight: 500;
+    text-decoration: none; transition: background 0.15s; font-family: var(--font);
+}
+.det-chat-btn:hover { background: rgba(110,231,183,0.25); }
+.det-event-page-link {
+    display: block; width: 100%; text-align: center; margin-top: 0.375rem;
+    font-size: 0.775rem; color: var(--text-2); text-decoration: none;
+}
+.det-event-page-link:hover { color: var(--text); }
 </style>
 {% endblock %}
 
 {% block main %}
-<div class="flex h-[calc(100vh-4rem)] overflow-hidden">
+<div class="map-shell">
 
     <!-- SIDEBAR -->
-    <div class="w-80 bg-white border-r border-gray-200
-                flex flex-col overflow-hidden shrink-0"
-         id="sidebar">
-
-        <div class="px-4 py-4 border-b border-gray-100">
-            <h2 class="text-base font-semibold text-gray-900">
-                Nearby Establishments
-            </h2>
-            <p class="text-xs text-gray-400 mt-0.5">
-                Click a pin to see details
-            </p>
-        </div>
-
-        <div class="flex-1 overflow-y-auto p-4"
-             id="sidebar-content">
-            <div class="text-center py-12" id="sidebar-placeholder">
-                <div class="text-4xl mb-3">📍</div>
-                <p class="text-gray-400 text-sm">
-                    Select a pin on the map to view establishment details.
-                </p>
+    <div class="sidebar">
+        <div class="sidebar-head">
+            <p class="sidebar-title">Establishments</p>
+            <div class="search-bar">
+                <span style="color:var(--text-3);font-size:0.875rem;">⌕</span>
+                <input type="text" id="search-input" placeholder="Search…" autocomplete="off">
+            </div>
+            <div class="filter-row">
+                <div class="filter-pill active" data-filter="all">All</div>
+                <div class="filter-pill" data-filter="live">
+                    <span style="width:6px;height:6px;border-radius:50%;background:var(--live-color);display:inline-block;flex-shrink:0;"></span>
+                    Live
+                </div>
+                <div class="filter-pill" data-filter="food">Food</div>
+                <div class="filter-pill" data-filter="clothing">Fashion</div>
             </div>
         </div>
 
+        <div class="sidebar-body">
+            <!-- LIST PANEL -->
+            <div class="sidebar-list" id="sidebar-list">
+                <div class="state-placeholder">
+                    <div class="icon">🗺️</div>
+                    <p>Loading…</p>
+                </div>
+            </div>
+
+            <!-- DETAIL PANEL (slides in) -->
+            <div class="sidebar-detail" id="sidebar-detail">
+                <button class="detail-back-btn" onclick="closeDetail()">
+                    ← Back to list
+                </button>
+                <div id="sidebar-detail-content">
+                    <!-- filled by JS -->
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="live-pulse-dot"></div>
+            <span><strong id="live-count">0</strong> live now</span>
+            <span style="margin-left:auto;font-size:0.75rem;color:var(--text-3);" id="total-count"></span>
+        </div>
     </div>
 
     <!-- MAP -->
-    <div class="flex-1 relative" id="map-container">
-        <div id="map" class="w-full h-full"></div>
-        <div id="map-loading"
-             class="absolute inset-0 bg-white bg-opacity-80
-                    flex items-center justify-center z-[1000]">
-            <div class="text-center">
-                <div class="text-3xl mb-2">🗺️</div>
-                <p class="text-gray-500 text-sm">Loading map...</p>
+    <div class="map-container">
+        <div id="map"></div>
+        <div id="map-loading">
+            <div>
+                <div class="loading-spinner"></div>
+                <p>Loading map…</p>
             </div>
         </div>
     </div>
-
 </div>
 {% endblock %}
 
 {% block extra_scripts %}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/htmx.org@1.9.10/dist/htmx.min.js"></script>
-
 <script>
-const DEFAULT_LAT = 29.1492;
-const DEFAULT_LNG = 75.7217;
-const DEFAULT_ZOOM = 14;
+/* ── Config ── */
+const DEFAULT_LAT = 29.1492, DEFAULT_LNG = 75.7217, DEFAULT_ZOOM = 14;
 
-const map = L.map('map');
+const CATEGORY_EMOJI = {
+    food:'🍽', clothing:'👗', grocery:'🛒', electronics:'📱',
+    health:'💊', beauty:'💄', fitness:'🏋', education:'📚',
+    entertainment:'🎭', services:'🔧', other:'🏪',
+};
 
+/* ── State ── */
+let allEstablishments = [];
+let markers = {};
+let activeSlug = null;
+let detailCache = {};  // slug → HTML string
+
+/* ── Map ── */
+const map = L.map('map', { zoomControl: false });
+L.control.zoom({ position: 'bottomright' }).addTo(map);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '© <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>',
-    referrerPolicy: 'no-referrer-when-downgrade',
+    maxZoom: 19, attribution: '© OpenStreetMap',
 }).addTo(map);
 
-const standardIcon = L.divIcon({
-    className: '',
-    html: `<div style="
-        width: 14px;
-        height: 14px;
-        background-color: #4F46E5;
-        border: 2px solid white;
-        border-radius: 50%;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-    "></div>`,
-    iconSize: [14, 14],
-    iconAnchor: [7, 7],
-});
+/* ── Dark map tile override ── */
+const s = document.createElement('style');
+s.textContent = `
+    .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9) saturate(0.5); }
+    .leaflet-control-zoom a { background:#1e1e1e!important; color:#aaa!important; border-color:rgba(255,255,255,0.1)!important; }
+    .leaflet-control-zoom a:hover { background:#2a2a2a!important; color:#fff!important; }
+    .leaflet-control-attribution { background:rgba(20,20,20,0.7)!important; color:#555!important; font-size:10px!important; }
+    .leaflet-control-attribution a { color:#666!important; }
+`;
+document.head.appendChild(s);
 
-const glowIcon = L.divIcon({
-    className: '',
-    html: `<div class="glow-pin" style="
-        width: 16px;
-        height: 16px;
-        background-color: #4F46E5;
-        border: 2px solid white;
-        border-radius: 50%;
-    "></div>`,
-    iconSize: [16, 16],
-    iconAnchor: [8, 8],
-});
+/* ── Helpers ── */
+function esc(t) {
+    if (!t) return '';
+    const d = document.createElement('div');
+    d.appendChild(document.createTextNode(String(t)));
+    return d.innerHTML;
+}
 
-fetch('{% url "map:establishments_json" %}')
-    .then(response => response.json())
-    .then(establishments => {
-        document.getElementById('map-loading').style.display = 'none';
+/* ── Marker icon ── */
+function makeIcon(est) {
+    const emoji = CATEGORY_EMOJI[est.category_key] || '🏪';
+    const liveClass = est.has_active_event ? 'live' : '';
+    return L.divIcon({
+        className: '',
+        html: `<div class="marker-circle ${liveClass}">${emoji}</div>`,
+        iconSize: [42,42], iconAnchor: [21,21], popupAnchor: [0,-26],
+    });
+}
 
-        if (establishments.length === 0) {
-            map.setView([DEFAULT_LAT, DEFAULT_LNG], DEFAULT_ZOOM);
-            return;
-        }
+/* ── Popup HTML ── */
+/* 
+    KEY FIX: buttons in popup do NOT navigate to a full page.
+    - "More Details" calls openDetail(slug) which loads into sidebar panel.
+    - "Join Chat" uses the actual chat room URL from est.chat_room_name.
+    Both use onclick= to avoid any href navigation.
+*/
+function makePopup(est) {
+    const emoji = CATEGORY_EMOJI[est.category_key] || '🏪';
+    const avatarHTML = est.photo_url
+        ? `<img src="${esc(est.photo_url)}" alt="">`
+        : emoji;
 
-        establishments.forEach(est => {
-            const icon = est.has_active_event ? glowIcon : standardIcon;
-            const marker = L.marker([est.latitude, est.longitude], {
-                icon: icon,
-                title: est.name,
-            });
+    const liveStrip = est.has_active_event ? `
+        <div class="popup-live-strip">
+            <span class="popup-live-dot"></span>
+            <span class="popup-live-strip-text">Live event now</span>
+        </div>` : '';
 
-            marker.bindPopup(`
-                <div style="font-size:13px; min-width:120px;">
-                    <strong>${est.name}</strong><br>
-                    <span style="color:#6B7280;">${est.category}</span>
+    const chatBtn = est.has_active_event && est.chat_room_name ? `
+        <button class="popup-btn popup-btn-chat"
+                onclick="window.location.href='/chat/${esc(est.chat_room_name)}/'">
+            💬 Join Chat
+        </button>` : '';
+
+    return `
+    <div class="popup-inner">
+        <div class="popup-header">
+            <div class="popup-avatar">${avatarHTML}</div>
+            <div>
+                <div class="popup-name">${esc(est.name)}</div>
+                <div class="popup-meta">
+                    ${est.has_active_event ? `<span class="live-tag">● Live</span><span>·</span>` : ''}
+                    <span>${esc(est.city)}</span>
                 </div>
-            `);
+            </div>
+        </div>
+        <div class="popup-pills">
+            <span class="popup-pill">${esc(est.category)}</span>
+        </div>
+        ${liveStrip}
+        <div class="popup-actions">
+            <button class="popup-btn popup-btn-primary"
+                    onclick="openDetail('${esc(est.slug)}'); map.closePopup();">
+                More Details
+            </button>
+            ${chatBtn}
+        </div>
+    </div>`;
+}
 
-            marker.on('click', function() {
-                const sidebarContent = document.getElementById('sidebar-content');
-                const detailUrl = `/map/establishment/${est.slug}/`;
-                sidebarContent.setAttribute('hx-get', detailUrl);
-                sidebarContent.setAttribute('hx-target', '#sidebar-content');
-                sidebarContent.setAttribute('hx-swap', 'innerHTML');
-                htmx.process(sidebarContent);
-                htmx.trigger(sidebarContent, 'click');
+/* ── Detail panel: open / close ── */
+function openDetail(slug) {
+    activeSlug = slug;
+    // Highlight list item
+    document.querySelectorAll('.list-item').forEach(el =>
+        el.classList.toggle('active', el.dataset.slug === slug)
+    );
+    // Slide panel in
+    document.getElementById('sidebar-detail').classList.add('open');
+
+    // If cached, use it
+    if (detailCache[slug]) {
+        document.getElementById('sidebar-detail-content').innerHTML = detailCache[slug];
+        return;
+    }
+
+    // Show spinner while fetching
+    document.getElementById('sidebar-detail-content').innerHTML = `
+        <div class="state-placeholder"><div class="loading-spinner" style="margin-bottom:0.5rem;"></div><p>Loading…</p></div>`;
+
+    // Fetch the partial
+    fetch(`/map/establishment/${slug}/`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(r => r.text())
+        .then(html => {
+            detailCache[slug] = html;
+            document.getElementById('sidebar-detail-content').innerHTML = html;
+        })
+        .catch(() => {
+            document.getElementById('sidebar-detail-content').innerHTML = `
+                <div class="state-placeholder"><p>Failed to load. Try again.</p></div>`;
+        });
+}
+
+function closeDetail() {
+    document.getElementById('sidebar-detail').classList.remove('open');
+    activeSlug = null;
+    document.querySelectorAll('.list-item').forEach(el => el.classList.remove('active'));
+}
+
+/* ── Select from list ── */
+function selectEst(slug) {
+    const m = markers[slug];
+    if (m) {
+        map.flyTo(m.marker.getLatLng(), 16, { duration: 0.5 });
+        setTimeout(() => m.marker.openPopup(), 550);
+    }
+    // Also open detail
+    openDetail(slug);
+}
+
+function flyTo(slug) {
+    const m = markers[slug];
+    if (m) map.flyTo(m.marker.getLatLng(), 16, { duration: 0.5 });
+}
+
+/* ── Render sidebar list ── */
+function renderList(establishments) {
+    const list = document.getElementById('sidebar-list');
+    if (!establishments.length) {
+        list.innerHTML = `<div class="state-placeholder"><div class="icon">🔍</div><p>No results.</p></div>`;
+        return;
+    }
+    list.innerHTML = establishments.map(est => {
+        const emoji = CATEGORY_EMOJI[est.category_key] || '🏪';
+        const sub = est.has_active_event
+            ? `<span class="live-badge">● Live now</span>`
+            : `<span>${esc(est.category)}</span>`;
+        return `
+        <div class="list-item" data-slug="${est.slug}" onclick="selectEst('${est.slug}')">
+            <div class="list-avatar">${emoji}</div>
+            <div class="list-info">
+                <div class="list-name">${esc(est.name)}</div>
+                <div class="list-sub">
+                    ${sub}
+                    <span class="list-dot"></span>
+                    <span>${esc(est.city)}</span>
+                </div>
+            </div>
+            <div class="list-fly-btn" title="Fly to"
+                 onclick="event.stopPropagation(); flyTo('${est.slug}')">⌖</div>
+        </div>`;
+    }).join('');
+}
+
+/* ── Filter + search ── */
+let currentFilter = 'all', searchQuery = '';
+
+function applyFilters() {
+    let f = allEstablishments;
+    if (currentFilter === 'live')     f = f.filter(e => e.has_active_event);
+    if (currentFilter === 'food')     f = f.filter(e => e.category_key === 'food');
+    if (currentFilter === 'clothing') f = f.filter(e => e.category_key === 'clothing');
+    if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        f = f.filter(e => e.name.toLowerCase().includes(q) || e.city.toLowerCase().includes(q));
+    }
+    renderList(f);
+}
+
+document.getElementById('search-input').addEventListener('input', function() {
+    searchQuery = this.value.trim(); applyFilters();
+});
+document.querySelectorAll('.filter-pill').forEach(pill => {
+    pill.addEventListener('click', function() {
+        document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+        this.classList.add('active');
+        currentFilter = this.dataset.filter;
+        applyFilters();
+    });
+});
+
+/* ── Load data ── */
+fetch('{% url "map:establishments_json" %}')
+    .then(r => r.json())
+    .then(data => {
+        document.getElementById('map-loading').style.display = 'none';
+        allEstablishments = data;
+
+        const liveCount = data.filter(e => e.has_active_event).length;
+        document.getElementById('live-count').textContent = liveCount;
+        document.getElementById('total-count').textContent = `${data.length} total`;
+
+        if (!data.length) { map.setView([DEFAULT_LAT, DEFAULT_LNG], DEFAULT_ZOOM); renderList([]); return; }
+
+        data.forEach(est => {
+            const marker = L.marker([est.latitude, est.longitude], {
+                icon: makeIcon(est), title: est.name,
+            }).addTo(map);
+
+            marker.bindPopup(makePopup(est), { maxWidth: 300, closeButton: true });
+
+            marker.on('click', () => {
+                activeSlug = est.slug;
+                document.querySelectorAll('.list-item').forEach(el =>
+                    el.classList.toggle('active', el.dataset.slug === est.slug)
+                );
+                const el = document.querySelector(`[data-slug="${est.slug}"]`);
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             });
 
-            marker.addTo(map);
+            markers[est.slug] = { marker, data: est };
         });
 
-        tryGeolocation(establishments);
+        renderList(data);
+        tryGeolocation(data);
     })
-    .catch(error => {
-        console.error('Failed to load establishments:', error);
+    .catch(() => {
         document.getElementById('map-loading').style.display = 'none';
         map.setView([DEFAULT_LAT, DEFAULT_LNG], DEFAULT_ZOOM);
     });
 
 function tryGeolocation(establishments) {
-    if (!navigator.geolocation) {
-        fitMapToEstablishments(establishments);
-        return;
-    }
+    if (!navigator.geolocation) { fitMap(establishments); return; }
     navigator.geolocation.getCurrentPosition(
-        function(position) {
-            map.setView(
-                [position.coords.latitude, position.coords.longitude],
-                15
-            );
-            L.circle(
-                [position.coords.latitude, position.coords.longitude],
-                {
-                    radius: position.coords.accuracy,
-                    color: '#4F46E5',
-                    fillColor: '#4F46E5',
-                    fillOpacity: 0.1,
-                    weight: 1,
-                }
-            ).addTo(map);
+        pos => {
+            map.setView([pos.coords.latitude, pos.coords.longitude], 15);
+            L.circleMarker([pos.coords.latitude, pos.coords.longitude], {
+                radius: 6, fillColor: '#6ee7b7', color: '#fff', weight: 2, fillOpacity: 1,
+            }).addTo(map).bindPopup('<span style="color:#111;font-size:0.8rem;">You are here</span>');
         },
-        function(error) {
-            fitMapToEstablishments(establishments);
-        },
+        () => fitMap(establishments),
         { timeout: 8000, enableHighAccuracy: true }
     );
 }
-
-function fitMapToEstablishments(establishments) {
-    if (establishments.length === 0) {
-        map.setView([DEFAULT_LAT, DEFAULT_LNG], DEFAULT_ZOOM);
-        return;
-    }
-    const bounds = L.latLngBounds();
-    establishments.forEach(est => bounds.extend([est.latitude, est.longitude]));
-    map.fitBounds(bounds, { padding: [40, 40] });
+function fitMap(establishments) {
+    if (!establishments.length) { map.setView([DEFAULT_LAT, DEFAULT_LNG], DEFAULT_ZOOM); return; }
+    const b = L.latLngBounds();
+    establishments.forEach(e => b.extend([e.latitude, e.longitude]));
+    map.fitBounds(b, { padding: [60, 60] });
 }
 </script>
 {% endblock %}

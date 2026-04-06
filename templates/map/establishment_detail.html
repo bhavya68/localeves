@@ -1,144 +1,82 @@
-{# File: templates/map/establishment_detail.html #}
 
-<div class="space-y-4">
 
-    {% if establishment.photo %}
-        <img src="{{ establishment.photo.url }}"
-             alt="{{ establishment.name }}"
-             class="w-full h-40 object-cover rounded-xl">
-    {% else %}
-        <div class="w-full h-40 bg-indigo-50 rounded-xl
-                    flex items-center justify-center">
-            <span class="text-5xl">🏪</span>
-        </div>
-    {% endif %}
+{% with establishment=establishment %}
 
-    <div class="flex items-start justify-between gap-2">
-        <h3 class="font-bold text-gray-900 text-base leading-snug">
-            {{ establishment.name }}
-        </h3>
+{% if establishment.photo %}
+    <img src="{{ establishment.photo.url }}" alt="{{ establishment.name }}" class="det-photo">
+{% else %}
+    <div class="det-photo-ph">🏪</div>
+{% endif %}
+
+<div class="det-body">
+
+    <div class="det-name-row">
+        <span class="det-name">{{ establishment.name }}</span>
         {% if establishment.is_verified %}
-            <span class="text-xs bg-green-100 text-green-700
-                         px-2 py-0.5 rounded-full font-medium shrink-0">
-                ✓ Verified
-            </span>
+            <span class="det-badge det-badge-verified">✓ Verified</span>
         {% endif %}
     </div>
-
-    <p class="text-xs text-gray-500 -mt-2">
-        {{ establishment.get_category_display }}
-        &nbsp;·&nbsp;
-        {{ establishment.city }}
-    </p>
+    <p class="det-meta">{{ establishment.get_category_display }} · {{ establishment.city }}</p>
 
     {% if establishment.description %}
-        <p class="text-sm text-gray-600 leading-relaxed">
-            {{ establishment.description }}
-        </p>
+        <p class="det-desc">{{ establishment.description }}</p>
     {% endif %}
 
-    {% if establishment.contact_phone or establishment.contact_email %}
-        <div class="border-t border-gray-100 pt-3 space-y-1.5">
-            {% if establishment.contact_phone %}
-                <p class="text-xs text-gray-500 flex items-center gap-2">
-                    <span>📞</span>
-                    <a href="tel:{{ establishment.contact_phone }}"
-                       class="text-indigo-600 hover:underline">
-                        {{ establishment.contact_phone }}
-                    </a>
-                </p>
-            {% endif %}
-            {% if establishment.contact_email %}
-                <p class="text-xs text-gray-500 flex items-center gap-2">
-                    <span>✉️</span>
-                    <a href="mailto:{{ establishment.contact_email }}"
-                       class="text-indigo-600 hover:underline truncate">
-                        {{ establishment.contact_email }}
-                    </a>
-                </p>
-            {% endif %}
-        </div>
+    {% if establishment.contact_phone %}
+    <div class="det-contact">
+        <span>📞</span>
+        <a href="tel:{{ establishment.contact_phone }}">{{ establishment.contact_phone }}</a>
+    </div>
     {% endif %}
-
+    {% if establishment.contact_email %}
+    <div class="det-contact">
+        <span>✉</span>
+        <a href="mailto:{{ establishment.contact_email }}">{{ establishment.contact_email }}</a>
+    </div>
+    {% endif %}
     {% if establishment.address %}
-        <p class="text-xs text-gray-500 flex items-start gap-2">
-            <span class="mt-0.5">📍</span>
-            <span>{{ establishment.address }}</span>
-        </p>
+    <div class="det-contact">
+        <span>📍</span>
+        <span>{{ establishment.address }}</span>
+    </div>
     {% endif %}
 
-    {# --- Live Event Badge + Chat button (only shown when event is actually live) --- #}
+    {# ── LIVE EVENTS ── #}
     {% for event in establishment.events.all %}
         {% if event.is_live %}
-            <div class="border-t border-gray-100 pt-3">
-                <div style="background:linear-gradient(135deg,rgba(124,58,237,0.1),rgba(79,70,229,0.1));
-                            border:1px solid rgba(124,58,237,0.25);
-                            border-radius:12px; padding:0.875rem;">
-                    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.35rem;">
-                        <span style="width:7px;height:7px;background:#7c3aed;border-radius:50%;
-                                     display:inline-block; animation:glow-pulse 1.8s ease-in-out infinite;"></span>
-                        <span style="font-size:0.65rem; font-weight:700; color:#7c3aed;
-                                     text-transform:uppercase; letter-spacing:0.08em;">
-                            Live Event
-                        </span>
-                    </div>
-                    <p style="font-size:0.875rem; font-weight:600; color:#1f2937; margin:0 0 0.2rem;">
-                        {{ event.name }}
-                    </p>
-                    {% if event.description %}
-                        <p style="font-size:0.75rem; color:#6b7280; margin:0 0 0.75rem;">
-                            {{ event.description|truncatechars:80 }}
-                        </p>
-                    {% endif %}
-                    <a href="/events/{{ event.id }}/"
-                       style="font-size:0.75rem; color:#7c3aed; text-decoration:none;
-                              font-weight:600;">
-                        View event details →
-                    </a>
-                </div>
-
-                {# Chat button — only if this event has an active chat room #}
-                {% if event.chat_room and event.chat_room.is_active %}
-                <div class="mt-2">
-                    <a href="/chat/{{ event.chat_room.room_name }}/"
-                       class="block w-full text-center bg-indigo-600
-                              text-white px-4 py-2.5 rounded-xl
-                              text-sm font-medium hover:bg-indigo-700
-                              transition-colors duration-200">
-                        💬 Join Live Chat
-                    </a>
-                    <p class="text-xs text-gray-400 text-center mt-1.5">
-                        Live group chat for this event
-                    </p>
-                </div>
-                {% endif %}
+        <hr class="det-sep">
+        <div class="det-event-card det-event-live">
+            <div class="det-event-label">
+                <span style="width:6px;height:6px;border-radius:50%;background:#6ee7b7;display:inline-block;flex-shrink:0;"></span>
+                Live event
             </div>
+            <div class="det-event-name">{{ event.name }}</div>
+            {% if event.description %}
+                <div class="det-event-sub">{{ event.description|truncatechars:80 }}</div>
+            {% endif %}
+            <a href="/events/{{ event.id }}/" class="det-event-link">View event page →</a>
+            {% if event.chat_room and event.chat_room.is_active %}
+                {# ── CORRECT CHAT LINK — goes directly to chat room URL ── #}
+                <a href="/chat/{{ event.chat_room.room_name }}/" class="det-chat-btn">
+                    💬 Join live chat
+                </a>
+            {% endif %}
+        </div>
         {% endif %}
     {% endfor %}
 
-    {# Upcoming events (not live yet) #}
+    {# ── UPCOMING EVENTS ── #}
     {% for event in establishment.events.all %}
         {% if event.is_payment_verified and event.is_active and not event.is_live %}
-            <div class="border-t border-gray-100 pt-3">
-                <div style="background:rgba(99,102,241,0.06); border:1px solid rgba(99,102,241,0.15);
-                            border-radius:12px; padding:0.875rem;">
-                    <p style="font-size:0.65rem; font-weight:700; color:#6366f1;
-                              text-transform:uppercase; letter-spacing:0.08em; margin-bottom:0.35rem;">
-                        Upcoming Event
-                    </p>
-                    <p style="font-size:0.875rem; font-weight:600; color:#1f2937; margin:0 0 0.2rem;">
-                        {{ event.name }}
-                    </p>
-                    <p style="font-size:0.75rem; color:#6b7280; margin:0 0 0.5rem;">
-                        {{ event.start_datetime|date:"d M, g:i A" }}
-                    </p>
-                    <a href="/events/{{ event.id }}/"
-                       style="font-size:0.75rem; color:#6366f1; text-decoration:none; font-weight:600;">
-                        View details →
-                    </a>
-                </div>
-            </div>
+        <hr class="det-sep">
+        <div class="det-event-card det-event-upcoming">
+            <div class="det-event-label">Upcoming</div>
+            <div class="det-event-name">{{ event.name }}</div>
+            <div class="det-event-sub">{{ event.start_datetime|date:"d M, g:i A" }}</div>
+            <a href="/events/{{ event.id }}/" class="det-event-link">View details →</a>
+        </div>
         {% endif %}
     {% endfor %}
 
 </div>
+{% endwith %}
